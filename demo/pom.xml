@@ -66,6 +66,12 @@
 			<version>3.5.12</version>
 		</dependency>
 
+		<!-- MyBatis Plus 分页插件 -->
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
+		</dependency>
+
 		<!--		hutool工具库-->
 		<dependency>
 			<groupId>cn.hutool</groupId>
@@ -80,7 +86,28 @@
 			<artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
 			<version>4.4.0</version>
 		</dependency>
+		<!--		aop切面编程依赖-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+			<version>2.5.4</version> <!-- 使用与你的 Spring Boot 版本兼容的版本 -->
+		</dependency>
+
 	</dependencies>
+
+
+	<dependencyManagement>
+		<dependencies>
+
+			<dependency>
+				<groupId>com.baomidou</groupId>
+				<artifactId>mybatis-plus-bom</artifactId>
+				<version>3.5.9</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<build>
 		<plugins>

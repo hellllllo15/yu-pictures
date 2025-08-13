@@ -4,7 +4,7 @@ package com.example.demo.exception;
 import lombok.Getter;
 
 //自定义业务异常
-
+@Getter
 public class BusinessException extends RuntimeException {
 
     /**
@@ -27,7 +27,5 @@ public class BusinessException extends RuntimeException {
         this.code = errorCode.getCode();
     }
 
-    public int getCode() {
-        return code;
-    }
+
 }
