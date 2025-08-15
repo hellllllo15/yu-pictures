@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 @TableName("user")
@@ -29,14 +30,14 @@ public class User {
     @TableField("userRole")
     private String userRole;
 
-    @TableField(value = "editText", fill = FieldFill.INSERT)
-    private LocalDateTime editText;
 
-    @TableField(value = "createTime", fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    private Date editText;
 
-    @TableField(value = "updateTime", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
+
+    private Date createTime;
+
+
+    private Date updateTime;
 
     @TableLogic
     private Integer isDelete;

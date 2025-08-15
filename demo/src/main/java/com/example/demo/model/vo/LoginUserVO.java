@@ -3,6 +3,7 @@ package com.example.demo.model.vo;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 
 //已登录用户视图脱敏
@@ -30,13 +31,13 @@ public class LoginUserVO {
     private String userRole;
 
 
-    private LocalDateTime editText;
+    private Date editText;
 
 
-    private LocalDateTime createTime;
+    private Date createTime;
 
 
-    private LocalDateTime updateTime;
+    private Date updateTime;
 
 
     private static final long serialVersionUID = 1L;

@@ -6,6 +6,13 @@ server:
 spring:
   application:
     name: yun-pictures
+  profiles:
+    active: local
+
+#    开发更大的文件上传体积
+  servlet:
+    multipart:
+      max-file-size: 10MB
 
   #数据库配置
   datasource:
@@ -37,3 +44,4 @@ knife4j:
               api-rule: package
               api-rule-resources:
                 com.example.demo.controller
+

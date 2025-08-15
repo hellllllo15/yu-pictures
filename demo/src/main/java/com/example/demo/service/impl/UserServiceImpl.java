@@ -139,6 +139,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         //每次查询时是从缓存中查询的，如果管理员直接操作数据库，可能导致缓存中没有更新
         long userId = currentUser.getId();
         currentUser = this.getById(userId);
+
+//这行代码仅测试时候使用，防止在数据库直接修改信息时，前端没有同步
+     //   request.getSession().setAttribute(USER_LOGIN_STATE, currentUser);
+
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
@@ -196,9 +200,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         return true;
     }
+    /**
+     * 是否为管理员
+     *
+     * @param user
+     * @return
+     */
+    @Override
+    public boolean isAdmin(User user) {
+        return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
+    }
 
 
 
+    /**
+     *分页查询
+     */
     @Override
     public QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
         if (userQueryRequest == null) {
