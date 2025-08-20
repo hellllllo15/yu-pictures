@@ -1,7 +1,13 @@
 <template>
   <div class="basic-layout">
-    <!-- 顶部导航区域 -->
-    <header class="header">
+    <!-- 全局背景：固定在最底层；在 /background 路由允许交互 -->
+    <BackgroundFrame :interactive="isBackgroundRoute" />
+
+    <!-- 左上角返回按钮（仅在 /background 显示） -->
+    <button v-if="isBackgroundRoute" class="bg-back-button" @click="handleBgBack" aria-label="返回">← 返回</button>
+
+    <!-- 顶部导航区域（在 /background 隐藏） -->
+    <header class="header foreground" v-if="!isBackgroundRoute">
       <div class="header-container">
         <!-- 左侧 Logo 区域 -->
         <div class="logo-section">
@@ -17,8 +23,9 @@
         <nav class="nav-menu">
           <RouterLink to="/" class="nav-item" active-class="active">首页</RouterLink>
           <RouterLink to="/admin/userManage" class="nav-item" active-class="active">用户管理</RouterLink>
-          <a href="#" class="nav-item">我的图库</a>
-          <a href="#" class="nav-item">上传中心</a>
+          <RouterLink to="/admin/pictureManage" class="nav-item" active-class="active">图片管理</RouterLink>
+          <RouterLink to="/picture/upload" class="nav-item" active-class="active">上传图片</RouterLink>
+          <RouterLink to="/background" class="nav-item" active-class="active">切换背景</RouterLink>
         </nav>
 
         <!-- 右侧用户区域 -->
@@ -83,13 +90,13 @@
       </div>
     </header>
 
-    <!-- 中间内容区域 -->
-    <main class="main-content">
+    <!-- 中间内容区域（在 /background 不渲染，以便全局背景可交互） -->
+    <main class="main-content foreground" v-if="!isBackgroundRoute">
       <slot />
     </main>
 
-    <!-- 底部区域 -->
-    <footer class="footer">
+    <!-- 底部区域（在 /background 隐藏） -->
+    <footer class="footer foreground" v-if="!isBackgroundRoute">
       <div class="footer-container">
         <!-- 左侧项目介绍 -->
         <div class="footer-section">
@@ -152,12 +159,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useRouter, RouterLink, useRoute } from 'vue-router'
 import { getLoginUserUsingGet, userLogoutUsingPost } from '../a/api/userController'
+import BackgroundFrame from '../components/BackgroundFrame.vue'
 
 const router = useRouter()
 const route = useRoute()
+const isBackgroundRoute = computed(() => route.path === '/background')
+
+// 返回上一页
+const handleBgBack = () => {
+  if (history.length > 1) router.back()
+  else router.push('/')
+}
 
 // 用户信息类型定义
 interface LoginUserVO {
@@ -330,19 +345,39 @@ export default {
   padding: 0;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: transparent;
 }
 
-/* 顶部导航样式 */
+/* 背景页返回按钮 */
+.bg-back-button {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 99999;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #667eea, #2a5298);
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  pointer-events: auto;
+}
+.bg-back-button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.3); }
+
+/* 让前景内容层级在背景之上 */
+.foreground { z-index: 1; position: relative; }
+
+/* 顶部导航样式（暗化） */
 .header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--bg-header);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
   padding: 0;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .header-container {
@@ -384,7 +419,7 @@ export default {
 }
 
 .nav-item {
-  color: #475569;
+  color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -394,11 +429,7 @@ export default {
 }
 
 .nav-item:hover,
-.nav-item.active {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  transform: translateY(-2px);
-}
+.nav-item.active { color: #a5b4fc; background: var(--hover-bg); }
 
 .nav-item::after {
   content: '';
@@ -470,42 +501,9 @@ export default {
   to { transform: rotate(360deg); }
 }
 
-.username {
-  font-weight: 500;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-}
-
-.username:hover {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.user-dropdown {
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.user-dropdown:hover {
-  background: rgba(102, 126, 234, 0.1);
-  transform: translateY(-1px);
-}
-
-.user-dropdown svg {
-  width: 20px;
-  height: 20px;
-  color: #475569;
-  transition: transform 0.3s ease;
-}
-
-.user-dropdown:hover svg {
-  transform: translateY(2px);
-}
+/* 用户名与下拉箭头颜色 */
+.username { color: var(--text-secondary); }
+.user-dropdown svg { color: var(--text-secondary); }
 
 /* 用户下拉菜单 */
 .user-dropdown-menu {
@@ -628,14 +626,14 @@ export default {
   width: 100%;
   margin: 0;
   padding: 0;
-  background: #f8fafc;
+  background: transparent;
   min-height: calc(100vh - 80px);
 }
 
-/* 底部样式 */
+/* 底部样式（暗化） */
 .footer {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  color: #fff;
+  background: linear-gradient(135deg, rgba(2,6,23,0.9) 0%, rgba(15,23,42,0.9) 100%);
+  color: var(--text-primary);
   padding: 3rem 0 1rem;
   position: relative;
 }
@@ -692,14 +690,14 @@ export default {
 }
 
 .footer-link {
-  color: #94a3b8;
+  color: var(--text-secondary);
   text-decoration: none;
   transition: all 0.3s ease;
   padding: 0.25rem 0;
 }
 
 .footer-link:hover {
-  color: #60a5fa;
+  color: #93c5fd;
   transform: translateX(5px);
 }
 

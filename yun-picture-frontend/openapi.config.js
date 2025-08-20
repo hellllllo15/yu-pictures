@@ -9,5 +9,5 @@ generateService({
   schemaPath: 'http://localhost:8123/api/v2/api-docs',
 
   //生成文件地址
-  serversPath: './src/app', 
+  serversPath: './src/a', 
 })

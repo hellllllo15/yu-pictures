@@ -147,16 +147,16 @@
                       <span class="btn-text">编辑</span>
                     </button>
                     <button class="delete-btn" @click="handleDelete(user)">
-                      <span class="btn-text">删除</span>
-                    </button>
+                    <span class="btn-text">删除</span>
+                  </button>
                   </div>
                 </td>
               </tr>
             </tbody>
           </table>
-          
+      
           <!-- 分页组件 -->
-          <div class="pagination-section">
+      <div class="pagination-section">
             <div class="pagination-info">
               <span v-if="isLoading" class="loading-text">加载中...</span>
               <span v-else-if="userList.length === 0" class="no-data-text">暂无数据</span>
@@ -166,7 +166,7 @@
                   (搜索结果)
                 </span>
               </span>
-            </div>
+          </div>
             <div class="pagination-controls" v-if="pagination.pages > 1">
               <button 
                 class="pagination-btn" 
@@ -185,9 +185,9 @@
                   @click="handlePageChange(page)"
                 >
                   {{ page }}
-                </button>
-              </div>
-              
+            </button>
+          </div>
+          
               <button 
                 class="pagination-btn" 
                 :disabled="pagination.current >= pagination.pages"
@@ -466,7 +466,7 @@ onMounted(async () => {
   height: 100vh;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -474,6 +474,8 @@ onMounted(async () => {
   min-width: 100vw;
   padding: 2rem;
   box-sizing: border-box;
+  opacity: 0.9;
+  color: var(--text-primary);
 }
 
 /* 动态粒子背景 */
@@ -692,12 +694,12 @@ onMounted(async () => {
 .main-content {
   position: relative;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(17,24,39,0.7);
   backdrop-filter: blur(20px);
   border-radius: 25px;
   padding: 2rem;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--border-color);
   transform: translateY(50px) scale(0.9);
   opacity: 0;
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -705,7 +707,11 @@ onMounted(async () => {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  /* 隐藏滚动条但可滚动 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
+.main-content::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
 .main-content.content-visible {
   transform: translateY(0) scale(1);
@@ -798,9 +804,9 @@ onMounted(async () => {
 .search-section {
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(42, 82, 152, 0.05));
+  background: rgba(17,24,39,0.5);
   border-radius: 15px;
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .search-header {
@@ -1007,12 +1013,12 @@ onMounted(async () => {
 /* 数据表格区域 */
 .table-section {
   margin-top: 2rem;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(17,24,39,0.65);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-color);
   overflow: visible; /* 去掉内层滚动条 */
 }
 
@@ -1071,7 +1077,7 @@ onMounted(async () => {
 .table-row td {
   padding: 1rem;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .id-cell {
@@ -1101,7 +1107,7 @@ onMounted(async () => {
 }
 
 .intro-text {
-  color: #999;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -1151,7 +1157,7 @@ onMounted(async () => {
 
 .time-cell {
   font-family: 'Courier New', monospace;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.85rem;
 }
 

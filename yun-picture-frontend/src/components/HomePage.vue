@@ -48,8 +48,8 @@
     <!-- 分类快速入口 -->
     <section class="categories-section">
       <div class="section-header">
-        <h2 class="section-title">探索分类</h2>
-        <p class="section-subtitle">按主题浏览精彩内容</p>
+        <h2 class="section-title" style="color: white;">探索分类</h2>
+        <p class="section-subtitle" style="color: white;">按主题浏览精彩内容</p>
       </div>
       
       <div class="categories-container">
@@ -107,6 +107,7 @@ export default {
 .home-page {
   width: 100%;
   min-height: 100vh;
+  opacity: 0.9;
 }
 
 /* 英雄区域样式 */
@@ -115,7 +116,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: transparent;
   color: white;
   text-align: center;
   padding: 2rem;
@@ -193,7 +194,7 @@ export default {
 /* 推荐图片区域 */
 .featured-section {
   padding: 5rem 2rem;
-  background: #f8fafc;
+  background: transparent;
   width: 100%;
   max-width: 100%;
 }
@@ -259,7 +260,7 @@ export default {
 /* 分类区域 */
 .categories-section {
   padding: 5rem 2rem;
-  background: white;
+  background: transparent;
   width: 100%;
   max-width: 100%;
 }
@@ -426,4 +427,18 @@ export default {
     font-size: 1.1rem;
   }
 }
+
+/* 追加暗色主题覆盖 */
+.image-card { background: var(--bg-surface-strong); box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+.image-title { color: var(--text-primary); }
+.author-name { color: var(--text-secondary); }
+.likes { color: #fda4af; }
+
+.category-card { background: var(--bg-surface); box-shadow: 0 4px 20px rgba(0,0,0,.2); }
+.category-name { color: var(--text-primary); }
+.category-count { color: var(--text-secondary); }
+
+/* 精选推荐标题与副标题使用纯白 */
+.featured-section .section-title { color: #ffffff; }
+.featured-section .section-subtitle { color: #ffffff; }
 </style> 

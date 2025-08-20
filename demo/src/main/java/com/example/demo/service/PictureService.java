@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.demo.model.dto.picture.PictureQueryRequest;
 import com.example.demo.model.dto.picture.PictureUploadRequest;
+import com.example.demo.model.dto.picture.PictureReviewRequest;
 import com.example.demo.model.entity.Picture;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.vo.PictureVO;
@@ -55,4 +56,12 @@ public interface PictureService extends IService<Picture> {
      * 校验图片
      */
     public void validPicture(Picture picture);
+
+    /**
+     * 图片审核
+     *
+     * @param pictureReviewRequest
+     * @param loginUser
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
 }

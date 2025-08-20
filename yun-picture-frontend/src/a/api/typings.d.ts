@@ -1,4 +1,12 @@
 declare namespace API {
+  type addPictureUsingPOSTParams = {
+    category?: string
+    id?: number
+    introduction?: string
+    name?: string
+    tags?: string[]
+  }
+
   type BaseResponseBoolean_ = {
     code?: number
     data?: boolean
@@ -144,6 +152,10 @@ declare namespace API {
     picScale?: number
     picSize?: number
     picWidth?: number
+    reviewMessage?: string
+    reviewStatus?: number
+    reviewTime?: string
+    reviewerId?: number
     tags?: string
     updateTime?: string
     url?: string
@@ -170,6 +182,9 @@ declare namespace API {
     picScale?: number
     picSize?: number
     picWidth?: number
+    reviewMessage?: string
+    reviewStatus?: number
+    reviewerId?: number
     searchText?: string
     sortField?: string
     sortOrder?: string

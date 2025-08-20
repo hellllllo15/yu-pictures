@@ -10,12 +10,10 @@ import com.example.demo.constant.UserConstant;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.exception.ThrowUtils;
-import com.example.demo.model.dto.picture.PictureEditRequest;
-import com.example.demo.model.dto.picture.PictureQueryRequest;
-import com.example.demo.model.dto.picture.PictureUpdateRequest;
-import com.example.demo.model.dto.picture.PictureUploadRequest;
+import com.example.demo.model.dto.picture.*;
 import com.example.demo.model.entity.Picture;
 import com.example.demo.model.entity.User;
+import com.example.demo.model.vo.PictureTagCategory;
 import com.example.demo.model.vo.PictureVO;
 import com.example.demo.service.PictureService;
 import com.example.demo.service.UserService;
@@ -29,7 +27,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -56,6 +56,8 @@ public class pictureController {
             @RequestParam("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
+
+
         User loginUser = userService.getLoginUser(request);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
         return ResultUtils.success(pictureVO);
@@ -160,7 +162,6 @@ public class pictureController {
      * 分页获取图片列表（封装类）
      */
     @PostMapping("/list/page/vo")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest , HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
@@ -204,4 +205,67 @@ public class pictureController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
+
+
+
+    /**
+     * 给前端硬编码的标签和分类
+     */
+    @GetMapping("/tag_category")
+    public BaseResponse<PictureTagCategory> listPictureTagCategory() {
+        PictureTagCategory pictureTagCategory = new PictureTagCategory();
+        List<String> tagList = Arrays.asList("热门","搞笑","生活","高清","艺术","校园","背景","简历","创意");
+        List<String> categoryList = Arrays.asList("模板","电商","表情包","素材","海报");
+        pictureTagCategory.setTagList(tagList);
+        pictureTagCategory.setCategoryList(categoryList);
+        return ResultUtils.success(pictureTagCategory);
+    }
+
+
+    /**
+     * 用户上传图片
+     */
+    @PostMapping("/add")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> addPicture(   @RequestParam("file") MultipartFile multipartFile,
+                                              PictureUpdateRequest pictureUpdateRequest,
+                                             HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+
+        //判断是上传还是更新图片
+        if(pictureUpdateRequest.getId()==null){
+            PictureUploadRequest uploadRequest=new PictureUploadRequest();
+
+            PictureVO pictureVO = pictureService.uploadPicture(multipartFile, uploadRequest, loginUser);
+            pictureUpdateRequest.setId(pictureVO.getId());
+        }
+
+
+
+
+
+        if ( pictureUpdateRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 将实体类和 DTO 进行转换
+        Picture picture = new Picture();
+        BeanUtils.copyProperties(pictureUpdateRequest, picture);
+        // 注意将 list 转为 string
+        picture.setTags(JSONUtil.toJsonStr(pictureUpdateRequest.getTags()));
+        // 设置编辑时间
+        picture.setEditTime(new Date());
+        // 数据校验
+        pictureService.validPicture(picture);
+
+        // 判断是否存在
+        long id = pictureUpdateRequest.getId();
+        Picture oldPicture = pictureService.getById(id);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+
+        // 操作数据库
+        boolean result = pictureService.updateById(picture);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
+
 }

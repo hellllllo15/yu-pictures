@@ -7,14 +7,10 @@ import java.io.Serializable;
 import java.util.List;
 
 
-//图片更新请求   用户上传图片
+// 用户上传图片
 @Data
-public class PictureUpdateRequest implements Serializable {
+public class PictureAddRequest implements Serializable {
 
-    /**
-     * id
-     */
-    private Long id;
 
     /**
      * 图片名称
