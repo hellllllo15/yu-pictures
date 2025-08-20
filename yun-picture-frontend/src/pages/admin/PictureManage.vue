@@ -83,6 +83,19 @@
               </div>
             </div>
             
+            <div class="search-item">
+              <label class="search-label">审核状态:</label>
+              <div class="input-wrapper">
+                <select class="search-select" v-model="searchForm.reviewStatus">
+                  <option value="">全部状态</option>
+                  <option value="0">待审核</option>
+                  <option value="1">已通过</option>
+                  <option value="2">已拒绝</option>
+                </select>
+                <div class="input-border"></div>
+              </div>
+            </div>
+            
             <button class="search-btn" @click="handleSearch">
               <span class="btn-text">搜索</span>
               <div class="btn-glow"></div>
@@ -133,7 +146,7 @@
                   <th>图片信息</th>
                   <th>用户id</th>
                   <th>创建时间</th>
-                  <th>编辑时间</th>
+                  <th>审核状态</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -151,7 +164,7 @@
                   </td>
                   <td class="name-cell">
                     <div class="image-name-container">
-                      <span class="image-name clamp-2">{{ image.name }}</span>
+                      <span class="image-name">{{ image.name }}</span>
                     </div>
                   </td>
                   <td class="intro-cell"><span class="clamp-3">{{ image.profile || '-' }}</span></td>
@@ -172,7 +185,11 @@
                   </td>
                   <td class="uploader-cell">{{ shortId(image.userId) }}</td>
                   <td class="time-cell">{{ formatDateTime(image.createTime) }}</td>
-                  <td class="time-cell">{{ formatDateTime(image.updateTime) }}</td>
+                  <td class="review-status-cell">
+                    <span class="status-tag" :class="`status-${image.reviewStatus}`">
+                      {{ getReviewStatusText(image.reviewStatus) }}
+                    </span>
+                  </td>
                   <td class="action-cell">
                     <div class="action-buttons">
                       <button class="view-btn disabled" disabled title="查看">
@@ -180,6 +197,13 @@
                       </button>
                       <button class="edit-btn" @click="editImage(image)" title="编辑">
                         <span class="btn-icon">✏️</span>
+                      </button>
+                      <button 
+                        class="review-btn" 
+                        @click="openReviewDialog(image)" 
+                        title="审核"
+                      >
+                        <span class="btn-icon">✅</span>
                       </button>
                       <button class="delete-btn" @click="deleteImage(image.id)" title="删除">
                         <span class="btn-icon">🗑️</span>
@@ -208,24 +232,72 @@
                 <span class="arrow">→</span>
               </button>
             </div>
-            
           </div>
         </div>
+        
+        <!-- 审核对话框 -->
+        <teleport to="body">
+          <div v-if="showReviewDialog" class="review-dialog-overlay" @click="closeReviewDialog">
+            <div class="review-dialog" role="dialog" aria-modal="true" @click.stop>
+              <div class="review-dialog-header">
+                <h3>审核图片</h3>
+                <button class="close-btn" @click="closeReviewDialog" aria-label="关闭">×</button>
+              </div>
+              <div class="review-dialog-content">
+                <div class="review-form">
+                  <div class="form-group">
+                    <label>审核结果:</label>
+                    <select v-model="reviewForm.status" class="review-select">
+                      <option value="1">通过</option>
+                      <option value="2">拒绝</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>审核意见:</label>
+                    <textarea 
+                      v-model="reviewForm.message" 
+                      placeholder="请输入审核意见（可选）"
+                      class="review-textarea"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="review-dialog-actions">
+                <button class="btn btn-secondary" @click="closeReviewDialog">取消</button>
+                <button class="btn btn-primary" @click="submitReview" :disabled="isSubmitting">
+                  {{ isSubmitting ? '提交中...' : '确认审核' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </teleport>
       </div>
     </div>
   </template>
   
   <script setup lang="ts">
-  import { ref, onMounted, reactive } from 'vue'
-  import { listPictureVoByPageUsingPost, deletePictureUsingPost } from '../../a/api/pictureController'
+  import { ref, onMounted, reactive, watch, onUnmounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { listPictureByPageUsingPost, deletePictureUsingPost, doPictureReviewUsingPost } from '../../a/api/pictureController'
   
   const isContentVisible = ref(false)
   const isLoading = ref(false)
+  const showReviewDialog = ref(false)
+  const isSubmitting = ref(false)
+  const currentReviewImage = ref<any>(null)
+  const router = useRouter()
   
   const searchForm = reactive({
     imageName: '',
     uploader: '',
-    imageType: ''
+    imageType: '',
+    reviewStatus: ''
+  })
+  
+  const reviewForm = reactive({
+    status: 1,
+    message: ''
   })
   
   const currentPage = ref(1)
@@ -247,7 +319,7 @@
       tags: ['生活','搞笑'],
       userId: '186609',
       createTime: '2024-12-11 22:54:47',
-      updateTime: '2024-12-11 22:55:24'
+      reviewStatus: 0
     },
     {
       id: '1866859179860885506',
@@ -262,7 +334,7 @@
       tags: ['风景'],
       userId: '188001',
       createTime: '2024-11-02 18:20:10',
-      updateTime: '2024-11-03 10:05:31'
+      reviewStatus: 1
     }
   ])
   
@@ -303,7 +375,7 @@
       tags: normalizeTags(r.tags ?? r.tagList ?? r.picTags),
       userId: r.userId ?? r.ownerId ?? '-',
       createTime: r.createTime ?? r.createdAt ?? '-',
-      updateTime: r.updateTime ?? r.updatedAt ?? '-',
+      reviewStatus: r.reviewStatus ?? r.status ?? 0,
     }
   }
   
@@ -322,8 +394,10 @@
         name: searchForm.imageName || undefined,
         userId: searchForm.uploader || undefined,
         picFormat: searchForm.imageType ? String(searchForm.imageType).toUpperCase() : undefined,
+        reviewStatus: searchForm.reviewStatus ? toNum(searchForm.reviewStatus) : undefined,
       }
-      const resp = await listPictureVoByPageUsingPost(body)
+      // 使用正确的API路由 /list/page
+      const resp = await listPictureByPageUsingPost(body)
       const pageData: any = resp?.data?.data
       if (pageData) {
         const records = Array.isArray(pageData.records) ? pageData.records : []
@@ -369,12 +443,91 @@
     }
   }
   
+  // 获取审核状态文本
+  const getReviewStatusText = (status: number) => {
+    const statusMap: { [key: number]: string } = {
+      0: '待审核',
+      1: '已通过',
+      2: '已拒绝'
+    }
+    return statusMap[status] || '未知'
+  }
+  
+  // 打开审核对话框
+  const openReviewDialog = (image: any) => {
+    currentReviewImage.value = image
+    reviewForm.status = 1
+    reviewForm.message = ''
+    showReviewDialog.value = true
+  }
+  
+  // 关闭审核对话框
+  const closeReviewDialog = () => {
+    showReviewDialog.value = false
+    currentReviewImage.value = null
+  }
+  
+  // 提交审核
+  const submitReview = async () => {
+    if (!currentReviewImage.value) return
+    
+    isSubmitting.value = true
+    try {
+      await doPictureReviewUsingPost({
+        id: currentReviewImage.value.id,
+        reviewStatus: reviewForm.status,
+        reviewMessage: reviewForm.message
+      })
+      
+      alert('审核提交成功')
+      closeReviewDialog()
+      fetchImageList() // 刷新列表
+    } catch (error) {
+      console.error('审核提交失败:', error)
+      alert('审核提交失败，请重试')
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
+  // 弹窗打开时禁止页面滚动
+  const toggleBodyScroll = (lock: boolean) => {
+    const body = document.body
+    if (!body) return
+    if (lock) {
+      body.style.overflow = 'hidden'
+    } else {
+      body.style.overflow = ''
+    }
+  }
+
+  watch(showReviewDialog, (val) => {
+    toggleBodyScroll(!!val)
+  })
+
+  onUnmounted(() => {
+    toggleBodyScroll(false)
+  })
+  
   const downloadImage = (image: any) => {
     alert(`下载图片: ${image.name}`)
   }
   
   const editImage = (image: any) => {
-    alert(`编辑图片: ${image.name}`)
+    try {
+      const query: any = {
+        id: image.id,
+        name: image.name,
+        introduction: image.profile || '',
+        category: (image as any).category || '',
+        tags: Array.isArray(image.tags) ? JSON.stringify(image.tags) : (image.tags || '[]'),
+        url: (image as any).url || image.thumbnail || ''
+      }
+      router.push({ path: '/picture/upload', query })
+    } catch (e) {
+      console.error('跳转编辑失败', e)
+      alert('跳转编辑失败，请重试')
+    }
   }
   
   const deleteImage = async (imageId: string) => {
@@ -586,7 +739,15 @@
   /* 图片名称样式 */
   .name-cell { max-width: 200px; }
   .image-name-container { display: flex; flex-direction: column; gap: 0.2rem; }
-  .image-name { font-weight: 600; color: #1e3c72; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .image-name { 
+    font-weight: 600; 
+    color: #1e3c72; 
+    word-wrap: break-word; 
+    word-break: break-all; 
+    line-height: 1.4; 
+    max-height: 3em; 
+    overflow: hidden; 
+  }
   .image-extension { font-size: 0.8rem; color: #666; font-family: 'Courier New', monospace; }
   
   /* 文件大小样式 */
@@ -622,6 +783,137 @@
   .edit-btn { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
   .delete-btn { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
   .view-btn:hover, .download-btn:hover, .edit-btn:hover, .delete-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+  
+  /* 审核按钮 */
+  .review-btn { width: 35px; height: 35px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; font-size: 1rem; background: linear-gradient(135deg, #10b981, #059669); color: white; }
+  .review-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+  
+  /* 审核状态标签 */
+  .review-status-cell { text-align: center; }
+  .status-tag { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: white; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
+  .status-0 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .status-1 { background: linear-gradient(135deg, #10b981, #059669); }
+  .status-2 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  
+  /* 审核对话框样式 */
+  .review-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+  
+  .review-dialog {
+    background: rgba(17, 24, 39, 0.95);
+    border-radius: 15px;
+    padding: 2rem;
+    min-width: 400px;
+    max-width: 500px;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(20px);
+  }
+  
+  .review-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .review-dialog-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+  
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+  }
+  
+  .review-form .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .review-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  
+  .review-select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    font-size: 1rem;
+  }
+  
+  .review-textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    font-size: 1rem;
+    resize: vertical;
+  }
+  
+  .review-dialog-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .review-dialog-actions .btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .review-dialog-actions .btn-secondary {
+    background: rgba(160, 174, 192, 0.3);
+    color: var(--text-secondary);
+  }
+  
+  .review-dialog-actions .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+  
+  .review-dialog-actions .btn:hover {
+    transform: translateY(-2px);
+  }
   
   /* 分页区域 */
   .pagination-section { padding: 1.5rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(42, 82, 152, 0.05)); border-radius: 15px; border: 1px solid rgba(102, 126, 234, 0.1); }

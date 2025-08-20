@@ -10,4 +10,6 @@ generateService({
 
   //生成文件地址
   serversPath: './src/a', 
+
+  //运行命令：node openapi.config.js
 })

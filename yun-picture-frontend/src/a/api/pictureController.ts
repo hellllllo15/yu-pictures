@@ -43,6 +43,26 @@ export async function addPictureUsingPost(
   })
 }
 
+/** addPictureByUrl POST /api/picture/add/url */
+export async function addPictureByUrlUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.addPictureByUrlUsingPOSTParams,
+  body: API.PictureUploadRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/picture/add/url', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    params: {
+      ...params,
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** deletePicture POST /api/picture/delete */
 export async function deletePictureUsingPost(
   body: API.DeleteRequest,
@@ -133,6 +153,21 @@ export async function listPictureVoByPageUsingPost(
   })
 }
 
+/** doPictureReview POST /api/picture/review */
+export async function doPictureReviewUsingPost(
+  body: API.PictureReviewRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/picture/review', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** listPictureTagCategory GET /api/picture/tag_category */
 export async function listPictureTagCategoryUsingGet(options?: { [key: string]: any }) {
   return request<API.BaseResponsePictureTagCategory_>('/api/picture/tag_category', {
@@ -193,6 +228,21 @@ export async function uploadPictureUsingPost(
     },
     data: formData,
     requestType: 'form',
+    ...(options || {}),
+  })
+}
+
+/** uploadPictureByUrl POST /api/picture/upload/url */
+export async function uploadPictureByUrlUsingPost(
+  body: API.PictureUploadRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePictureVO_>('/api/picture/upload/url', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
     ...(options || {}),
   })
 }

@@ -17,10 +17,14 @@
             <span class="title-text">上传图片</span>
           </h2>
           <p class="form-subtitle">支持拖拽上传或点击选择文件</p>
+          <div class="upload-mode-toggle">
+            <button type="button" class="toggle-btn" :class="{ active: !isUrlMode }" @click="switchToFile">文件上传</button>
+            <button type="button" class="toggle-btn" :class="{ active: isUrlMode }" @click="switchToUrl">URL上传</button>
+          </div>
         </div>
         
         <!-- 上传区域 -->
-        <div class="upload-section">
+        <div class="upload-section" v-show="!isUrlMode">
           <div 
             class="upload-area"
             :class="{ 
@@ -74,6 +78,26 @@
             style="display: none"
           />
         </div>
+
+        <!-- URL 上传区域 -->
+        <div class="url-section" v-if="isUrlMode">
+          <div class="form-group">
+            <label class="form-label">图片 URL *</label>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                v-model.trim="urlInput"
+                placeholder="请输入以 http 或 https 开头的图片链接"
+                class="form-input"
+              />
+              <div class="input-border"></div>
+            </div>
+            <p class="url-hint" v-if="urlInput && !isValidUrl">链接必须以 http:// 或 https:// 开头</p>
+          </div>
+          <div class="url-preview" v-if="isValidUrl">
+            <img :src="urlInput" alt="URL 预览" />
+          </div>
+        </div>
         
         <!-- 图片信息表单 -->
         <form class="picture-form" @submit.prevent="handleSubmit">
@@ -124,16 +148,30 @@
           <div class="form-group">
             <label class="form-label">标签</label>
             <div class="input-wrapper">
-              <select 
-                v-model="formData.tags"
-                class="form-select"
-                placeholder="请选择标签"
-                multiple
-              >
-                <option v-for="tag in tags" :key="tag" :value="tag">
-                  {{ tag }}
-                </option>
-              </select>
+              <div class="tags-container">
+                <div class="tags-list">
+                  <span 
+                    v-for="tag in tags" 
+                    :key="tag" 
+                    class="tag-item"
+                    :class="{ 'selected': formData.tags.includes(tag) }"
+                    @click="toggleTag(tag)"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
+                <div class="selected-tags" v-if="formData.tags.length > 0">
+                  <span class="selected-label">已选择：</span>
+                  <span 
+                    v-for="tag in formData.tags" 
+                    :key="tag" 
+                    class="selected-tag"
+                    @click="removeTag(tag)"
+                  >
+                    {{ tag }} ×
+                  </span>
+                </div>
+              </div>
               <div class="input-border"></div>
             </div>
           </div>
@@ -150,10 +188,10 @@
             <button 
               type="submit" 
               class="btn btn-primary" 
-              :disabled="!selectedFile || isUploading"
+              :disabled="isUploading || (isUrlMode ? !isValidUrl : !selectedFile)"
             >
-              <span v-if="!isUploading">创建</span>
-              <span v-else>上传中...</span>
+              <span v-if="!isUploading">{{ isEditing ? '更新' : '创建' }}</span>
+              <span v-else>{{ isEditing ? '更新中...' : '上传中...' }}</span>
               <div class="btn-glow"></div>
             </button>
           </div>
@@ -163,7 +201,8 @@
   </template>
   
   <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
+  import { ref, reactive, onMounted, computed } from 'vue'
+  import { useRoute } from 'vue-router'
   import { listPictureTagCategoryUsingGet } from '../../a/api/pictureController'
 
   // 文件输入引用
@@ -175,11 +214,22 @@
   const uploadProgress = ref(0)
   const selectedFile = ref<File | null>(null)
   const previewUrl = ref<string>('')
+  const isUrlMode = ref(false)
+  const urlInput = ref('')
+  const isValidUrl = computed(() => /^(https?:)\/\//i.test(urlInput.value))
+
+  const switchToFile = () => { isUrlMode.value = false }
+  const switchToUrl = () => { isUrlMode.value = true; removeFile() }
 
   // 分类和标签数据
   const categories = ref<string[]>([])
   const tags = ref<string[]>([])
-  
+
+  // 路由参数（用于编辑预填）
+  const route = useRoute()
+  const editingId = ref<string | number | null>(null)
+  const isEditing = computed(() => !!editingId.value)
+
   // 表单数据
   const formData = reactive({
     name: '',
@@ -201,7 +251,7 @@
       console.error('获取分类和标签失败:', error)
     }
   }
-  
+
   // 简单的消息提示函数
   const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
     const messageDiv = document.createElement('div')
@@ -227,7 +277,7 @@
       setTimeout(() => document.body.removeChild(messageDiv), 300)
     }, 3000)
   }
-  
+
   // 添加CSS动画
   const style = document.createElement('style')
   style.textContent = `
@@ -241,18 +291,18 @@
     }
   `
   document.head.appendChild(style)
-  
+
   // 拖拽处理
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault()
     isDragOver.value = true
   }
-  
+
   const handleDragLeave = (e: DragEvent) => {
     e.preventDefault()
     isDragOver.value = false
   }
-  
+
   const handleDrop = (e: DragEvent) => {
     e.preventDefault()
     isDragOver.value = false
@@ -262,19 +312,19 @@
       handleFile(files[0])
     }
   }
-  
+
   // 文件选择处理
   const triggerFileInput = () => {
     fileInput.value?.click()
   }
-  
+
   const handleFileSelect = (e: Event) => {
     const target = e.target as HTMLInputElement
     if (target.files && target.files.length > 0) {
       handleFile(target.files[0])
     }
   }
-  
+
   // 文件处理
   const handleFile = (file: File) => {
     // 验证文件类型
@@ -303,7 +353,7 @@
       formData.name = file.name.replace(/\.[^/.]+$/, '')
     }
   }
-  
+
   // 移除文件
   const removeFile = () => {
     selectedFile.value = null
@@ -312,7 +362,7 @@
       fileInput.value.value = ''
     }
   }
-  
+
   // 格式化文件大小
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes'
@@ -322,46 +372,99 @@
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
   
+  // 切换标签选择
+  const toggleTag = (tag: string) => {
+    if (formData.tags.includes(tag)) {
+      formData.tags = formData.tags.filter(t => t !== tag)
+    } else {
+      formData.tags.push(tag)
+    }
+  }
+
+  // 移除已选择的标签
+  const removeTag = (tag: string) => {
+    formData.tags = formData.tags.filter(t => t !== tag)
+  }
+
   // 表单提交
   const handleSubmit = async () => {
-    if (!selectedFile.value) {
-      showMessage('请选择要上传的图片', 'error')
-      return
-    }
-    
     if (!formData.name.trim()) {
       showMessage('请输入图片名称', 'error')
       return
     }
-    
+
+    // URL 上传分支
+    if (isUrlMode.value) {
+      if (!isValidUrl.value) {
+        showMessage('请输入以 http 或 https 开头的图片链接', 'error')
+        return
+      }
+      isUploading.value = true
+      try {
+        const qs = new URLSearchParams()
+        qs.append('name', formData.name)
+        if (formData.introduction) qs.append('introduction', formData.introduction)
+        if (formData.category) qs.append('category', formData.category)
+        if (Array.isArray(formData.tags)) {
+          formData.tags.forEach((t) => qs.append('tags', t))
+        }
+        if (editingId.value) qs.append('id', String(editingId.value))
+
+        const resp = await fetch(`/api/picture/add/url?${qs.toString()}` , {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileUrl: urlInput.value })
+        })
+        if (resp.ok) {
+          const result = await resp.json()
+          if (result.code === 0) {
+            showMessage('图片 URL 上传成功！', 'success')
+            resetForm()
+            urlInput.value = ''
+            isUrlMode.value = false
+          } else {
+            showMessage(result.message || '上传失败', 'error')
+          }
+        } else {
+          showMessage('上传失败，请重试', 'error')
+        }
+      } catch (error) {
+        console.error('URL 上传错误:', error)
+        showMessage('上传失败，请重试', 'error')
+      } finally {
+        isUploading.value = false
+      }
+      return
+    }
+
+    // 文件上传分支
+    if (!selectedFile.value) {
+      showMessage('请选择要上传的图片', 'error')
+      return
+    }
     isUploading.value = true
     uploadProgress.value = 0
-    
     try {
-      // 模拟上传进度
       const progressInterval = setInterval(() => {
         if (uploadProgress.value < 90) {
           uploadProgress.value += Math.random() * 20
         }
       }, 200)
-      
-      // 创建 FormData
       const formDataToSend = new FormData()
       formDataToSend.append('file', selectedFile.value)
       formDataToSend.append('name', formData.name)
       formDataToSend.append('introduction', formData.introduction)
       formDataToSend.append('category', formData.category)
       formDataToSend.append('tags', Array.isArray(formData.tags) ? formData.tags.join(',') : formData.tags)
-      
-      // 调用后端 API
+      if (editingId.value) {
+        formDataToSend.append('id', String(editingId.value))
+      }
       const response = await fetch('/api/picture/add', {
         method: 'POST',
         body: formDataToSend
       })
-      
       clearInterval(progressInterval)
       uploadProgress.value = 100
-      
       if (response.ok) {
         const result = await response.json()
         if (result.code === 0) {
@@ -381,7 +484,7 @@
       uploadProgress.value = 0
     }
   }
-  
+
   // 重置表单
   const resetForm = () => {
     removeFile()
@@ -391,11 +494,30 @@
       category: '',
       tags: []
     })
+    urlInput.value = ''
   }
-  
+
   // 组件挂载时获取分类和标签数据
   onMounted(() => {
     fetchTagCategories()
+    // 从路由读取预填数据
+    const q = route.query as any
+    if (q) {
+      if (q.id) editingId.value = q.id
+      if (q.name) formData.name = String(q.name)
+      if (q.introduction) formData.introduction = String(q.introduction)
+      if (q.category) formData.category = String(q.category)
+      if (q.tags) {
+        try {
+          const arr = JSON.parse(q.tags)
+          if (Array.isArray(arr)) formData.tags = arr
+        } catch { /* ignore */ }
+      }
+      if (q.url && /^(https?:)\/\//i.test(String(q.url))) {
+        isUrlMode.value = true
+        urlInput.value = String(q.url)
+      }
+    }
   })
   </script>
   
@@ -521,6 +643,16 @@
     font-size: 1.1rem;
     margin: 0;
   }
+
+  .upload-mode-toggle { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem; }
+  .toggle-btn { padding: 0.5rem 1rem; border: 1px solid rgba(102,126,234,0.4); background: rgba(255,255,255,0.85); color: #1e3c72; border-radius: 999px; cursor: pointer; font-weight: 600; transition: all .2s ease; }
+  .toggle-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border-color: transparent; box-shadow: 0 8px 24px rgba(102,126,234,.35); }
+  .toggle-btn:not(.active):hover { background: rgba(255,255,255,1); }
+
+  .url-section { margin-bottom: 2rem; }
+  .url-hint { color: #ef4444; margin-top: .5rem; font-size: .9rem; }
+  .url-preview { margin-top: 1rem; border: 1px solid rgba(102,126,234,0.25); border-radius: 12px; overflow: hidden; background: rgba(17,24,39,0.6); }
+  .url-preview img { width: 100%; max-height: 360px; object-fit: contain; display: block; }
   
   /* 上传区域 */
   .upload-section {
@@ -774,6 +906,74 @@
   
   .form-select option:hover {
     background: rgba(102, 126, 234, 0.1);
+  }
+  
+  /* 标签选择器样式 */
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+  }
+
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag-item {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+  }
+
+  .tag-item.selected {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+  }
+
+  .selected-tags {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+  }
+
+  .selected-label {
+    color: #a0aec0;
+    font-size: 0.85rem;
+    margin-right: 0.5rem;
+  }
+
+  .selected-tag {
+    background: rgba(245, 101, 101, 0.1);
+    color: #e53e3e;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid rgba(245, 101, 101, 0.3);
+  }
+
+  .selected-tag:hover {
+    background: rgba(245, 101, 101, 0.2);
+    border-color: rgba(245, 101, 101, 0.5);
   }
   
   /* 表单操作按钮 */

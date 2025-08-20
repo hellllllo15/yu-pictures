@@ -24,12 +24,12 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile 文件
+     * @param inputSource 输入源
      * @param pictureUploadRequest 图片上传请求
      * @param loginUser 登录用户
      * @return PictureVO
      */
-    PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser);
+    PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
 
 
     /**分页查询
@@ -59,9 +59,11 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 图片审核
-     *
-     * @param pictureReviewRequest
-     * @param loginUser
      */
     void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * 填充审核参数
+     */
+    public void fillReviewParams(Picture picture, User loginUser);
 }

@@ -12,6 +12,9 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.exception.ThrowUtils;
 import com.example.demo.manager.FileManager;
+import com.example.demo.manager.upload.FilePictureUpload;
+import com.example.demo.manager.upload.PictureUploadTemplate;
+import com.example.demo.manager.upload.UrlPictureUpload;
 import com.example.demo.mapper.PictureMapper;
 import com.example.demo.model.dto.file.UploadPictureResult;
 import com.example.demo.model.dto.picture.PictureQueryRequest;
@@ -45,7 +48,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
 
     @Resource
-    private FileManager fileManager;
+    private FilePictureUpload filePictureUpload;
+
+    @Resource
+    private UrlPictureUpload urlPictureUpload;
 
     @Resource
     private UserService userService;
@@ -55,13 +61,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     /**
      * 上传图片
      *
-     * @param multipartFile 文件
+     * @param inputSource 输入源
      * @param pictureUploadRequest 图片上传请求
      * @param loginUser 登录用户
      * @return PictureVO
      */
     @Override
-    public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         // 用于判断是新增还是更新图片
         Long pictureId = null;
@@ -70,15 +76,26 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
         // 如果是更新图片，需要校验图片是否存在
         if (pictureId != null) {
-            boolean exists = this.lambdaQuery()
-                    .eq(Picture::getId, pictureId)
-                    .exists();
-            ThrowUtils.throwIf(exists, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+            Picture oldPicture = this.getById(pictureId);
+            ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+            // 仅本人或管理员可编辑
+            if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+            }
         }
         // 上传图片，得到信息
         // 按照用户 id 划分目录
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
-        UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+
+        // 根据 inputSource 类型区分上传方式
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        if (inputSource instanceof String) {
+            pictureUploadTemplate = urlPictureUpload;
+        }
+        UploadPictureResult uploadPictureResult = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);
+
+
+      //  UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
         // 构造要入库的图片信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
@@ -98,6 +115,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             //将Date对象转换为LocalDateTime对象
             picture.setEditTime(new Date());
         }
+
+
         boolean result = this.saveOrUpdate(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
         return PictureVO.objToVo(picture);
@@ -136,6 +155,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
                     .or()
                     .like("introduction", searchText));
         }
+
+        Integer reviewStatus = pictureQueryRequest.getReviewStatus();
+        String reviewMessage = pictureQueryRequest.getReviewMessage();
+        Long reviewerId = pictureQueryRequest.getReviewerId();
+        queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
+        queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
+        queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
+
+
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
@@ -234,8 +262,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     /**
      * 图片审核
      *
-     * @param pictureReviewRequest
-     * @param loginUser
+     *
      */
     @Override
     public void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser) {
@@ -259,5 +286,23 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         updatePicture.setReviewTime(new Date());
         boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+    }
+
+
+    /**
+     *填充审核参数
+     */
+    @Override
+    public void fillReviewParams(Picture picture, User loginUser) {
+        if (userService.isAdmin(loginUser)) {
+            // 管理员自动过审
+            picture.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            picture.setReviewerId(loginUser.getId());
+            picture.setReviewMessage("管理员自动过审");
+            picture.setReviewTime(new Date());
+        } else {
+            // 非管理员，创建或编辑都要改为待审核
+            picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
+        }
     }
 }

@@ -1,4 +1,12 @@
 declare namespace API {
+  type addPictureByUrlUsingPOSTParams = {
+    category?: string
+    id?: number
+    introduction?: string
+    name?: string
+    tags?: string[]
+  }
+
   type addPictureUsingPOSTParams = {
     category?: string
     id?: number
@@ -192,6 +200,12 @@ declare namespace API {
     userId?: number
   }
 
+  type PictureReviewRequest = {
+    id?: number
+    reviewMessage?: string
+    reviewStatus?: number
+  }
+
   type PictureTagCategory = {
     categoryList?: string[]
     tagList?: string[]
@@ -203,6 +217,11 @@ declare namespace API {
     introduction?: string
     name?: string
     tags?: string[]
+  }
+
+  type PictureUploadRequest = {
+    fileUrl?: string
+    id?: number
   }
 
   type PictureVO = {
@@ -230,6 +249,7 @@ declare namespace API {
   }
 
   type uploadPictureUsingPOSTParams = {
+    fileUrl?: string
     id?: number
   }
 

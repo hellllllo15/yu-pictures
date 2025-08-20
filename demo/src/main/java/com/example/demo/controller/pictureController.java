@@ -13,6 +13,7 @@ import com.example.demo.exception.ThrowUtils;
 import com.example.demo.model.dto.picture.*;
 import com.example.demo.model.entity.Picture;
 import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.PictureReviewStatusEnum;
 import com.example.demo.model.vo.PictureTagCategory;
 import com.example.demo.model.vo.PictureVO;
 import com.example.demo.service.PictureService;
@@ -48,7 +49,7 @@ public class pictureController {
 
 
     /**
-     * 上传图片（可重新上传）
+     * 上传图片（可重新上传）  前端未使用
      */
     @PostMapping("/upload")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -111,6 +112,8 @@ public class pictureController {
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
 
+
+
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -167,15 +170,20 @@ public class pictureController {
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        // 查询数据库
+
+
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+// 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
+
         // 获取封装返回结果
        return ResultUtils.success(pictureService.getPictureVOPage(picturePage,request));
     }
 
     /**
-     * 编辑图片（给用户使用）
+     * 编辑图片（给用户使用）  前端未使用
      */
     @PostMapping("/edit")
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest , HttpServletRequest request) {
@@ -200,6 +208,10 @@ public class pictureController {
         if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
+        //补充审核参数
+        pictureService.fillReviewParams(picture,loginUser);
+
+
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -223,7 +235,7 @@ public class pictureController {
 
 
     /**
-     * 用户上传图片
+     * 用户上传/更新图片/文件上传
      */
     @PostMapping("/add")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -262,10 +274,91 @@ public class pictureController {
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
 
+
+        //补充审核参数
+        pictureService.fillReviewParams(picture,loginUser);
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
 
+
+
+    /**
+     * 通过 URL 上传图片（可重新上传）  前端未使用
+     */
+    @PostMapping("/upload/url")
+    public BaseResponse<PictureVO> uploadPictureByUrl(
+            @RequestBody PictureUploadRequest pictureUploadRequest,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        String fileUrl = pictureUploadRequest.getFileUrl();
+        PictureVO pictureVO = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
+        return ResultUtils.success(pictureVO);
+    }
+
+
+
+    /**
+     * 通过 URL 上传/更新图片
+     */
+    @PostMapping("/add/url")
+    public BaseResponse<Boolean> addPictureByUrl(
+            @RequestBody PictureUploadRequest pictureUploadRequest,
+            PictureUpdateRequest pictureUpdateRequest,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        //判断是上传还是更新图片
+        if(pictureUpdateRequest.getId()==null){
+            PictureUploadRequest uploadRequest=new PictureUploadRequest();
+            String fileUrl = pictureUploadRequest.getFileUrl();
+
+            PictureVO pictureVO = pictureService.uploadPicture(fileUrl, uploadRequest, loginUser);
+            pictureUpdateRequest.setId(pictureVO.getId());
+        }
+
+
+        if ( pictureUpdateRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 将实体类和 DTO 进行转换
+        Picture picture = new Picture();
+        BeanUtils.copyProperties(pictureUpdateRequest, picture);
+        // 注意将 list 转为 string
+        picture.setTags(JSONUtil.toJsonStr(pictureUpdateRequest.getTags()));
+        // 设置编辑时间
+        picture.setEditTime(new Date());
+        // 数据校验
+        pictureService.validPicture(picture);
+
+        // 判断是否存在
+        long id = pictureUpdateRequest.getId();
+        Picture oldPicture = pictureService.getById(id);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+
+
+        //补充审核参数
+        pictureService.fillReviewParams(picture,loginUser);
+        // 操作数据库
+        boolean result = pictureService.updateById(picture);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
+
+
+
+
+    /**
+     * 管理员审核图片
+     */
+    @PostMapping("/review")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest,
+                                                 HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        return ResultUtils.success(true);
+    }
 }

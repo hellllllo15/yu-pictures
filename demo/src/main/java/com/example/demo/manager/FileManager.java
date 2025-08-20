@@ -23,8 +23,11 @@ import java.util.Date;
 import java.util.List;
 
 //跟项目有一点关系，但是未绑死
+
+//@Deprecated:已废弃，改为upload包的模版方法进行优化
 @Service
 @Slf4j
+@Deprecated
 public class FileManager {
 
     @Resource

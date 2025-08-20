@@ -1,6 +1,6 @@
 <template>
   <div class="bg-frame">
-    <iframe ref="iframeRef" class="bg-iframe" :class="{ interactive: props.interactive }" src="/background/BackGround.html" title="全局背景" referrerpolicy="no-referrer"></iframe>
+    <iframe ref="iframeRef" class="bg-iframe" :class="{ interactive: props.interactive }" src="/background/BackGround.html" title="全局背景" referrerpolicy="no-referrer" @load="handleIframeLoad"></iframe>
     <button v-if="props.interactive" class="bg-back-btn" @click="handleBack" aria-label="返回">← 返回</button>
   </div>
 </template>
@@ -12,24 +12,45 @@ const props = defineProps<{ interactive?: boolean }>()
 const router = useRouter()
 const route = useRoute()
 const iframeRef = ref<HTMLIFrameElement | null>(null)
+const iframeLoaded = ref(false)
 
 const postControlsVisible = (visible: boolean) => {
   const iframe = iframeRef.value
-  if (!iframe || !iframe.contentWindow) return
-  iframe.contentWindow.postMessage({ type: 'SET_CONTROLS_VISIBLE', visible }, '*')
+  if (!iframe || !iframe.contentWindow || !iframeLoaded.value) return
+  
+  // 确保 iframe 已经完全加载
+  try {
+    iframe.contentWindow.postMessage({ type: 'SET_CONTROLS_VISIBLE', visible }, '*')
+  } catch (error) {
+    console.warn('发送消息到 iframe 失败:', error)
+  }
+}
+
+// 监听 iframe 加载完成
+const handleIframeLoad = () => {
+  iframeLoaded.value = true
+  // iframe 加载完成后，根据当前状态发送消息
+  // 默认情况下，控制组件应该是隐藏的，除非在 /background 路由
+  postControlsVisible(!!props.interactive)
 }
 
 onMounted(() => {
-  // 初始发送一次
-  postControlsVisible(!!props.interactive)
+  // 不在这里立即发送消息，等待 iframe 加载完成
+  // 这样可以避免页面刷新后控制组件错误显示
 })
 
 watch(() => props.interactive, (val) => {
-  postControlsVisible(!!val)
+  // 只有在 iframe 加载完成后才发送消息
+  if (iframeLoaded.value) {
+    postControlsVisible(!!val)
+  }
 })
 
 watch(() => route.path, () => {
-  postControlsVisible(!!props.interactive)
+  // 路由变化时，只有在 iframe 加载完成后才发送消息
+  if (iframeLoaded.value) {
+    postControlsVisible(!!props.interactive)
+  }
 })
 
 const handleBack = () => {
@@ -38,7 +59,10 @@ const handleBack = () => {
 }
 
 onBeforeUnmount(() => {
-  postControlsVisible(true)
+  // 组件卸载时，确保控制组件是隐藏的
+  if (iframeLoaded.value) {
+    postControlsVisible(false)
+  }
 })
 </script>
 
