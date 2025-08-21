@@ -63,6 +63,21 @@ export async function addPictureByUrlUsingPost(
   })
 }
 
+/** crawlOriginalUrls GET /api/picture/crawl/urls */
+export async function crawlOriginalUrlsUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.crawlOriginalUrlsUsingGETParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListString_>('/api/picture/crawl/urls', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
 /** deletePicture POST /api/picture/delete */
 export async function deletePictureUsingPost(
   body: API.DeleteRequest,
@@ -228,6 +243,21 @@ export async function uploadPictureUsingPost(
     },
     data: formData,
     requestType: 'form',
+    ...(options || {}),
+  })
+}
+
+/** uploadPictureByBatch POST /api/picture/upload/batch */
+export async function uploadPictureByBatchUsingPost(
+  body: API.PictureUploadByBatchRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseInt_>('/api/picture/upload/batch', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
     ...(options || {}),
   })
 }

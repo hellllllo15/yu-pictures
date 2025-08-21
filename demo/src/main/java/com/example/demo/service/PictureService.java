@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.demo.model.dto.picture.PictureQueryRequest;
+import com.example.demo.model.dto.picture.PictureUploadByBatchRequest;
 import com.example.demo.model.dto.picture.PictureUploadRequest;
 import com.example.demo.model.dto.picture.PictureReviewRequest;
 import com.example.demo.model.entity.Picture;
@@ -14,9 +15,10 @@ import com.example.demo.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import com.example.demo.manager.crawl.CrawlPictures;
 
 public interface PictureService extends IService<Picture> {
-
 
 
 
@@ -66,4 +68,31 @@ public interface PictureService extends IService<Picture> {
      * 填充审核参数
      */
     public void fillReviewParams(Picture picture, User loginUser);
+
+
+    /**
+     * 批量抓取和创建图片
+     *
+     * @param pictureUploadByBatchRequest
+     * @param loginUser
+     * @return 成功创建的图片数
+     */
+    int uploadPictureByBatch(
+            PictureUploadByBatchRequest pictureUploadByBatchRequest,
+            User loginUser
+    );
+
+    
+
+    /**
+     * 批量抓取图片原图 URL（支持偏移量分页）
+     * first = offset * 20 + 1
+     * @param keyword 关键词
+     * @param offset 偏移量（1,2,3...），会映射到 first
+     * @return 原图链接列表
+     */
+    default List<String> fetchPictureUrlsByKeyword(String keyword, int offset) {
+        return CrawlPictures.crawl(keyword, offset);
+    }
+
 }

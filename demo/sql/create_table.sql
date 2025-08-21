@@ -56,3 +56,8 @@ create table if not exists picture
 
    -- 创建基于 reviewStatus 列的索引
    CREATE INDEX idx_reviewStatus ON picture (reviewStatus);
+
+
+   ALTER TABLE picture
+      -- 添加新列
+      ADD COLUMN sourceUrl VARCHAR(255) NULL COMMENT '原始图片的URL';

@@ -30,6 +30,9 @@ public class Picture {
     private Date editTime;
 
     private Date updateTime;
+
+    private String sourceUrl;
+
     @TableLogic
     private Boolean isDelete;
 

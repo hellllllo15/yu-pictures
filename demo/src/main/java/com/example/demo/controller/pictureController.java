@@ -31,6 +31,7 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import com.example.demo.manager.crawl.CrawlPictures;
 
 @Slf4j
 @RestController
@@ -349,6 +350,7 @@ public class pictureController {
 
 
 
+
     /**
      * 管理员审核图片
      */
@@ -361,4 +363,39 @@ public class pictureController {
         pictureService.doPictureReview(pictureReviewRequest, loginUser);
         return ResultUtils.success(true);
     }
+
+
+
+
+    /**
+     * 普通批量抓取图片
+     */
+    @PostMapping("/upload/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Integer> uploadPictureByBatch(
+            @RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,
+            HttpServletRequest request
+    ) {
+        ThrowUtils.throwIf(pictureUploadByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        int uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
+        return ResultUtils.success(uploadCount);
+    }
+
+    /**
+     * 批量抓取原图 URL（仅抓取，不入库）
+     */
+    @GetMapping("/crawl/urls")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<List<String>> crawlOriginalUrls(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset
+    ) {
+        if (offset == null || offset < 0) {
+            offset = 0;
+        }
+        List<String> urls = CrawlPictures.crawl(keyword, offset);
+        return ResultUtils.success(urls);
+    }
+
 }

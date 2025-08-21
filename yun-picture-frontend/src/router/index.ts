@@ -7,6 +7,7 @@ import UserManage from '../pages/admin/UserManage.vue'
 import AddPicture from '../components/picture/AddPicture.vue'
 import BackGround from '../pages/background/BackGround.vue'
 import PictureManage from '../pages/admin/PictureManage.vue'
+import CrawlPictures from '../components/picture/CrawlPictures.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -45,6 +46,11 @@ const router = createRouter({
       path: '/picture/upload',
       name: '上传图片',
       component: AddPicture,
+    },
+    {
+      path: '/picture/crawl',
+      name: '批量抓取',
+      component: CrawlPictures,
     },
     {
       path: '/background',

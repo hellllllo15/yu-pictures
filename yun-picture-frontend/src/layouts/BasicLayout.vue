@@ -25,6 +25,7 @@
           <RouterLink to="/admin/userManage" class="nav-item" active-class="active">用户管理</RouterLink>
           <RouterLink to="/admin/pictureManage" class="nav-item" active-class="active">图片管理</RouterLink>
           <RouterLink to="/picture/upload" class="nav-item" active-class="active">上传图片</RouterLink>
+          <RouterLink to="/picture/crawl" class="nav-item" active-class="active">抓取图片</RouterLink>
           <RouterLink to="/background" class="nav-item" active-class="active">切换背景</RouterLink>
         </nav>
 

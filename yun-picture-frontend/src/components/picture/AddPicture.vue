@@ -392,13 +392,13 @@
       showMessage('请输入图片名称', 'error')
       return
     }
-
+    
     // URL 上传分支
     if (isUrlMode.value) {
       if (!isValidUrl.value) {
         showMessage('请输入以 http 或 https 开头的图片链接', 'error')
-        return
-      }
+      return
+    }
       isUploading.value = true
       try {
         const qs = new URLSearchParams()
