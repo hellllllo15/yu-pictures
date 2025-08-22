@@ -233,8 +233,8 @@
               </button>
             </div>
           </div>
-        </div>
-        
+            </div>
+            
         <!-- 审核对话框 -->
         <teleport to="body">
           <div v-if="showReviewDialog" class="review-dialog-overlay" @click="closeReviewDialog">
@@ -250,8 +250,8 @@
                     <select v-model="reviewForm.status" class="review-select">
                       <option value="1">通过</option>
                       <option value="2">拒绝</option>
-                    </select>
-                  </div>
+              </select>
+            </div>
                   <div class="form-group">
                     <label>审核意见:</label>
                     <textarea 
@@ -260,8 +260,8 @@
                       class="review-textarea"
                       rows="3"
                     ></textarea>
-                  </div>
-                </div>
+          </div>
+        </div>
               </div>
               <div class="review-dialog-actions">
                 <button class="btn btn-secondary" @click="closeReviewDialog">取消</button>
@@ -535,7 +535,7 @@
       try {
         // 直接传递字符串ID，避免JavaScript数字精度丢失
         await deletePictureUsingPost({ id: imageId as any })
-        alert('删除成功')
+      alert('删除成功')
         // 重新获取数据
         fetchImageList()
       } catch (error) {
@@ -739,14 +739,14 @@
   /* 图片名称样式 */
   .name-cell { max-width: 200px; }
   .image-name-container { display: flex; flex-direction: column; gap: 0.2rem; }
-  .image-name { 
-    font-weight: 600; 
-    color: #1e3c72; 
+  .image-name {
+    font-weight: 600;
+    color: #1e3c72;
     word-wrap: break-word; 
     word-break: break-all; 
     line-height: 1.4; 
     max-height: 3em; 
-    overflow: hidden; 
+    overflow: hidden;
   }
   .image-extension { font-size: 0.8rem; color: #666; font-family: 'Courier New', monospace; }
   

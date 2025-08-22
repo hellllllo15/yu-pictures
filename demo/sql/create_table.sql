@@ -61,3 +61,7 @@ create table if not exists picture
    ALTER TABLE picture
       -- 添加新列
       ADD COLUMN sourceUrl VARCHAR(255) NULL COMMENT '原始图片的URL';
+
+      ALTER TABLE picture
+          -- 添加新列
+          ADD COLUMN thumbnailUrl varchar(512) NULL COMMENT '缩略图 url';

@@ -63,10 +63,10 @@ public class CrawlPictures{
 
 			// 返回前 20 条
 			List<String> allUrls = new ArrayList<>(urls);
-			if (allUrls.size() > 20) {
-				allUrls = new ArrayList<>(allUrls.subList(0, 20));
+			if (allUrls.size() > 100) {
+				allUrls = new ArrayList<>(allUrls.subList(0, 100));
 			}
-			return a ? filterAccessibleImages(allUrls, 20) : allUrls;
+			return a ? filterAccessibleImages(allUrls, 100) : allUrls;
 		} catch (IOException e) {
 			return result; // 失败时返回空数组
 		}
