@@ -3,7 +3,8 @@ import axios from 'axios'
 
 // 创建 Axios 实例
 const myAxios = axios.create({
-    baseURL: '',
+  baseURL: '',
+   // baseURL: 'http://8.137.113.126:8123',
   //baseURL: 'http://localhost:8123',
   timeout: 60000,
   withCredentials: true,

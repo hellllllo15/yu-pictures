@@ -71,7 +71,7 @@ public class UserController {
     /**
      * 用户注销
      */
-    @PostMapping("/logout")
+    //@PostMapping("/logout")
     public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         boolean result = userService.userLogout(request);
@@ -124,7 +124,7 @@ public class UserController {
     /**
      * 删除用户
      */
-    @PostMapping("/delete")
+    //@PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {

@@ -203,7 +203,11 @@
   <script setup lang="ts">
   import { ref, reactive, onMounted, computed } from 'vue'
   import { useRoute } from 'vue-router'
-  import { listPictureTagCategoryUsingGet } from '../../a/api/pictureController'
+  import { 
+    listPictureTagCategoryUsingGet,
+    addPictureByUrlUsingPost,
+    addPictureUsingPost
+  } from '../../a/api/pictureController'
 
   // 文件输入引用
   const fileInput = ref<HTMLInputElement>()
@@ -401,32 +405,26 @@
     }
       isUploading.value = true
       try {
-        const qs = new URLSearchParams()
-        qs.append('name', formData.name)
-        if (formData.introduction) qs.append('introduction', formData.introduction)
-        if (formData.category) qs.append('category', formData.category)
-        if (Array.isArray(formData.tags)) {
-          formData.tags.forEach((t) => qs.append('tags', t))
-        }
-        if (editingId.value) qs.append('id', String(editingId.value))
-
-        const resp = await fetch(`/api/picture/add/url?${qs.toString()}` , {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileUrl: urlInput.value })
-        })
-        if (resp.ok) {
-          const result = await resp.json()
-          if (result.code === 0) {
-            showMessage('图片 URL 上传成功！', 'success')
-            resetForm()
-            urlInput.value = ''
-            isUrlMode.value = false
-          } else {
-            showMessage(result.message || '上传失败', 'error')
+        const resp = await addPictureByUrlUsingPost(
+          {
+            name: formData.name,
+            introduction: formData.introduction,
+            category: formData.category,
+            tags: Array.isArray(formData.tags) ? formData.tags : [formData.tags],
+            id: editingId.value ? Number(editingId.value) : undefined
+          },
+          { 
+            fileUrl: urlInput.value,
+            picName: formData.name
           }
+        )
+        if (resp.data?.code === 0) {
+          showMessage('图片 URL 上传成功！', 'success')
+          resetForm()
+          urlInput.value = ''
+          isUrlMode.value = false
         } else {
-          showMessage('上传失败，请重试', 'error')
+          showMessage(resp.data?.message || '上传失败', 'error')
         }
       } catch (error) {
         console.error('URL 上传错误:', error)
@@ -450,31 +448,25 @@
           uploadProgress.value += Math.random() * 20
         }
       }, 200)
-      const formDataToSend = new FormData()
-      formDataToSend.append('file', selectedFile.value)
-      formDataToSend.append('name', formData.name)
-      formDataToSend.append('introduction', formData.introduction)
-      formDataToSend.append('category', formData.category)
-      formDataToSend.append('tags', Array.isArray(formData.tags) ? formData.tags.join(',') : formData.tags)
-      if (editingId.value) {
-        formDataToSend.append('id', String(editingId.value))
-      }
-      const response = await fetch('/api/picture/add', {
-        method: 'POST',
-        body: formDataToSend
-      })
+      
+      const response = await addPictureUsingPost(
+        {
+          name: formData.name,
+          introduction: formData.introduction,
+          category: formData.category,
+          tags: Array.isArray(formData.tags) ? formData.tags : [formData.tags],
+          id: editingId.value ? Number(editingId.value) : undefined
+        },
+        {},
+        selectedFile.value
+      )
       clearInterval(progressInterval)
       uploadProgress.value = 100
-      if (response.ok) {
-        const result = await response.json()
-        if (result.code === 0) {
-          showMessage('图片上传成功！', 'success')
-          resetForm()
-        } else {
-          showMessage(result.message || '上传失败', 'error')
-        }
+      if (response.data?.code === 0) {
+        showMessage('图片上传成功！', 'success')
+        resetForm()
       } else {
-        showMessage('上传失败，请重试', 'error')
+        showMessage(response.data?.message || '上传失败', 'error')
       }
     } catch (error) {
       console.error('上传错误:', error)

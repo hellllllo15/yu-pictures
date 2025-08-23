@@ -378,7 +378,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             pictureUploadRequest.setFileUrl(fileUrl);
             if (StrUtil.isNotBlank(namePrefix)) {
                 // 设置图片名称，序号连续递增
-                pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
+                pictureUploadRequest.setPicName("测试图片" + (uploadCount + 1));
             }
             try {
                 PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);

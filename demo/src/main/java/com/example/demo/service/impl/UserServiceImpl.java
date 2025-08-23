@@ -73,7 +73,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUserAccount(userAccount);
         user.setUserPassword(encryptPassword);
         user.setUserName("无名");
-        user.setUserRole(UserRoleEnum.USER.getValue());
+     user.setUserAvatar("https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com/%E6%89%B9%E6%B3%A8%202025-04-26%20171608.png");
+        user.setUserRole(UserRoleEnum.ADMIN.getValue());
         boolean saveResult = this.save(user);
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");

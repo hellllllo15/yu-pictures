@@ -155,6 +155,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { crawlOriginalUrlsUsingGet } from '@/a/api/pictureController'
 
 const keyword = ref('')
 const offset = ref<number>(0)
@@ -220,23 +221,29 @@ const handleCrawl = async () => {
   imageLoadingStates.value = []
   imageErrorStates.value = []
   try {
-    const q = new URLSearchParams({ keyword: keyword.value, offset: String(offset.value || 0) })
-    const resp = await fetch(`/api/picture/crawl/urls?${q.toString()}`)
-    if (!resp.ok) throw new Error('请求失败')
-    const data = await resp.json()
-    // 后端为 BaseResponse 格式或直接数组的两种兼容
-    const arr = Array.isArray(data) ? data : data?.data
-    urls.value = Array.isArray(arr) ? arr.filter((u) => typeof u === 'string') : []
-    
-    // 初始化图片状态
-    imageLoadingStates.value = new Array(urls.value.length).fill(true)
-    imageErrorStates.value = new Array(urls.value.length).fill(false)
-    
-    // 重置所有图片的策略索引
-    imageLoadStrategies.value.clear()
-    urls.value.forEach((_, idx) => {
-      imageLoadStrategies.value.set(idx, 0)
+    // 使用正确的 API 函数而不是原生 fetch
+    const response = await crawlOriginalUrlsUsingGet({
+      keyword: keyword.value,
+      offset: offset.value || 0
     })
+    
+    if (response.data?.code === 0) {
+      // 后端为 BaseResponse 格式或直接数组的两种兼容
+      const arr = Array.isArray(response.data.data) ? response.data.data : response.data?.data
+      urls.value = Array.isArray(arr) ? arr.filter((u) => typeof u === 'string') : []
+      
+      // 初始化图片状态
+      imageLoadingStates.value = new Array(urls.value.length).fill(true)
+      imageErrorStates.value = new Array(urls.value.length).fill(false)
+      
+      // 重置所有图片的策略索引
+      imageLoadStrategies.value.clear()
+      urls.value.forEach((_, idx) => {
+        imageLoadStrategies.value.set(idx, 0)
+      })
+    } else {
+      throw new Error(response.data?.message || '抓取失败')
+    }
   } catch (e) {
     console.error('抓取失败', e)
     urls.value = []

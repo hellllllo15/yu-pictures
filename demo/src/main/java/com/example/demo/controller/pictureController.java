@@ -86,7 +86,7 @@ public class pictureController {
     /**
      * 删除图片
      */
-    @PostMapping("/delete")
+   // @PostMapping("/delete")
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest , HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
