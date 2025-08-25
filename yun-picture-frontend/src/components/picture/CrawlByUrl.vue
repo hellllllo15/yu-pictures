@@ -3,10 +3,10 @@
     <div class="main-content">
       <div class="form-header">
         <h2 class="title">
-          <span class="title-icon">🕷️</span>
-          <span>批量抓取图片</span>
+          <span class="title-icon">🔍</span>
+          <span>以图搜图</span>
         </h2>
-        <p class="subtitle">输入关键词与偏移量，抓取返回的原图链接（仅展示前 100 张）</p>
+        <p class="subtitle">输入图片URL，搜索相似图片（仅展示前 100 张）</p>
       </div>
 
       <div class="reminder-section">
@@ -14,48 +14,68 @@
           <div class="reminder-icon">💡</div>
           <div class="reminder-content">
             <h4 class="reminder-title">使用提醒</h4>
-            <p class="reminder-text">直接在浏览器搜索图片地址，鼠标右键可保存，有的图片不安全，可能会无法展示</p>
+            <p class="reminder-text">支持各种图片格式，输入完整的图片URL地址，系统将自动搜索相似图片</p>
           </div>
         </div>
       </div>
 
       <div class="main-section">
-        <form class="crawl-form" @submit.prevent="handleCrawl">
+        <!-- 输入区域 -->
+        <form class="crawl-form" @submit.prevent="handleSearch">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">关键词 *</label>
+              <label class="form-label">图片URL地址 *</label>
               <div class="input-wrapper">
-                <input v-model.trim="keyword" type="text" placeholder="如：猫咪、风景" class="form-input" />
+                <input 
+                  v-model.trim="imageUrl" 
+                  type="url" 
+                  placeholder="如：https://example.com/image.jpg" 
+                  class="form-input" 
+                />
                 <div class="input-border"></div>
               </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">偏移量</label>
-              <div class="input-wrapper">
-                <input v-model.number="offset" type="number" min="0" step="1" placeholder="0, 1, 2..." class="form-input" />
-                <div class="input-border"></div>
-              </div>
-              <div class="hint">first = 偏移量 × 20 + 1</div>
             </div>
             <div class="actions">
-              <button class="btn btn-primary" type="submit" :disabled="isLoading || !keyword">
-                <span v-if="!isLoading">开始抓取</span>
-                <span v-else>抓取中...</span>
-                <div class="btn-glow"></div>
-              </button>
-              <button class="btn btn-secondary" type="button" @click="goToImageSearch" :disabled="isLoading">
-                <span class="btn-icon">🔍</span>
-                <span>以图搜图</span>
+              <button class="btn btn-primary" type="submit" :disabled="isLoading || !imageUrl">
+                <span v-if="!isLoading">开始搜索</span>
+                <span v-else>搜索中...</span>
                 <div class="btn-glow"></div>
               </button>
             </div>
           </div>
         </form>
 
-        <div class="result-section" v-if="displayUrls.length > 0">
-          <h3 class="section-title">抓取结果（前 100 张）</h3>
+        <!-- 输入图片预览 -->
+        <div v-if="imageUrl" class="input-preview-section">
+          <h3 class="section-title">搜索图片预览</h3>
+          <div class="input-preview">
+            <div class="input-image-container">
+              <img 
+                :src="imageUrl" 
+                alt="搜索图片" 
+                @error="onInputImageError"
+                @load="onInputImageLoad"
+                :class="{ 'img-loading': inputImageLoading, 'img-error': inputImageError }"
+                referrerpolicy="no-referrer"
+              />
+              <div v-if="inputImageLoading" class="loading-overlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">加载图片中...</div>
+              </div>
+              <div v-if="inputImageError" class="error-overlay">
+                <div class="error-icon">⚠️</div>
+                <div class="error-text">图片加载失败</div>
+                <div class="error-hint">请检查URL是否正确</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 搜索结果 -->
+        <div class="result-section" v-if="searchUrls.length > 0">
+          <h3 class="section-title">搜索结果（前 100 张）</h3>
           <div class="grid">
-            <div v-for="(url, idx) in displayUrls" :key="url + '-' + idx" class="card">
+            <div v-for="(url, idx) in displaySearchUrls" :key="url + '-' + idx" class="card">
               <div class="thumb">
                 <img 
                   :src="url" 
@@ -64,17 +84,7 @@
                   @load="onImgLoad(idx)"
                   :class="{ 'img-normal': !imageErrorStates[idx] && !imageLoadingStates[idx] }"
                   referrerpolicy="no-referrer"
-                  
                 />
-                <!-- 暂时隐藏加载和错误覆盖层，让图片正常显示 -->
-                <!-- <div v-if="imageLoadingStates[idx]" class="loading-overlay">
-                  <div class="loading-spinner"></div>
-                </div>
-                <div v-if="imageErrorStates[idx]" class="error-overlay">
-                  <div class="error-icon">⚠️</div>
-                  <div class="error-text">加载失败</div>
-                  <button @click="retryLoadImage(idx)" class="retry-btn">重试</button>
-                </div> -->
                 <div class="preview-overlay" v-if="!imageLoadingStates[idx]">
                   <button @click="previewImage(url, idx)" class="preview-btn">
                     <span class="preview-icon">👁️</span>
@@ -95,7 +105,10 @@
           </div>
         </div>
 
-        <div v-else class="empty">暂无数据，请输入关键词后点击抓取</div>
+        <div v-else-if="hasSearched" class="empty">
+          {{ searchUrls.length === 0 ? '未找到相似图片' : '暂无数据，请输入图片URL后点击搜索' }}
+        </div>
+        <div v-else class="empty">请输入图片URL后点击搜索</div>
       </div>
     </div>
 
@@ -110,8 +123,6 @@
               @error="onPreviewImgError"
               @load="onPreviewImgLoad"
               :class="{ 'preview-loading': previewLoading, 'preview-error': previewError }"
-             
-             
             />
             <div v-if="previewLoading" class="preview-loading-overlay">
               <div class="preview-loading-spinner"></div>
@@ -160,17 +171,19 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { crawlOriginalUrlsUsingGet } from '../../a/api/pictureController'
+// import { searchImageByUrlUsingPost } from '../../a/api/pictureController'
+import request from '../../request'
 
-const router = useRouter()
-
-const keyword = ref('')
-const offset = ref<number>(0)
+const imageUrl = ref('')
 const isLoading = ref(false)
-const urls = ref<string[]>([])
+const hasSearched = ref(false)
+const searchUrls = ref<string[]>([])
 const imageLoadingStates = ref<boolean[]>([])
 const imageErrorStates = ref<boolean[]>([])
+
+// 输入图片预览状态
+const inputImageLoading = ref(false)
+const inputImageError = ref(false)
 
 // 预览相关状态
 const showPreview = ref(false)
@@ -182,7 +195,7 @@ const previewError = ref(false)
 const copyStatus = ref('复制地址')
 
 // 图片加载策略管理
-const imageLoadStrategies = ref<Map<number, number>>(new Map()) // 记录每个图片的当前策略索引
+const imageLoadStrategies = ref<Map<number, number>>(new Map())
 
 // 定义加载策略
 const loadStrategies = [
@@ -193,6 +206,68 @@ const loadStrategies = [
   { name: '两个属性都加', url: (originalUrl: string) => getCleanImageUrl(originalUrl), attrs: { crossorigin: 'anonymous', referrerpolicy: 'no-referrer' } }
 ]
 
+const displaySearchUrls = computed(() => searchUrls.value.slice(0, 100))
+
+// 输入图片事件处理
+const onInputImageError = () => {
+  inputImageError.value = true
+  inputImageLoading.value = false
+}
+
+const onInputImageLoad = () => {
+  inputImageLoading.value = false
+  inputImageError.value = false
+}
+
+// 搜索函数
+const handleSearch = async () => {
+  if (!imageUrl.value) return
+  
+  isLoading.value = true
+  hasSearched.value = true
+  searchUrls.value = []
+  imageLoadingStates.value = []
+  imageErrorStates.value = []
+  
+  try {
+    console.log('开始以图搜图，输入URL:', imageUrl.value)
+    
+    const response = await request('/api/picture/search/by-image', {
+      method: 'POST',
+      params: {
+        imageUrl: imageUrl.value
+      }
+    })
+    
+    console.log('搜索响应:', response)
+    
+    if (response.data?.code === 0) {
+      const arr = Array.isArray(response.data.data) ? response.data.data : []
+      searchUrls.value = arr.filter((u: any) => typeof u === 'string')
+      
+      console.log('搜索到图片数量:', searchUrls.value.length)
+      
+      // 初始化图片状态
+      imageLoadingStates.value = new Array(searchUrls.value.length).fill(true)
+      imageErrorStates.value = new Array(searchUrls.value.length).fill(false)
+      
+      // 重置所有图片的策略索引
+      imageLoadStrategies.value.clear()
+      searchUrls.value.forEach((_, idx) => {
+        imageLoadStrategies.value.set(idx, 0)
+      })
+    } else {
+      throw new Error(response.data?.message || '搜索失败')
+    }
+  } catch (e) {
+    console.error('以图搜图失败', e)
+    searchUrls.value = []
+    alert('搜索失败，请稍后重试或检查图片URL是否正确')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 // 获取当前策略
 const getCurrentStrategy = (idx: number) => {
   const strategyIndex = imageLoadStrategies.value.get(idx) || 0
@@ -201,10 +276,8 @@ const getCurrentStrategy = (idx: number) => {
 
 // 应用策略到图片元素
 const applyStrategyToImage = (img: HTMLImageElement, strategy: any, originalUrl: string) => {
-  // 设置src
   img.src = strategy.url(originalUrl)
   
-  // 设置属性
   if (strategy.attrs.crossorigin) {
     img.setAttribute('crossorigin', strategy.attrs.crossorigin)
   } else {
@@ -220,80 +293,22 @@ const applyStrategyToImage = (img: HTMLImageElement, strategy: any, originalUrl:
   console.log(`应用策略 [${strategy.name}] 到图片 ${img.alt}: ${strategy.url(originalUrl)}`)
 }
 
-const displayUrls = computed(() => urls.value.slice(0, 100))
-
-const handleCrawl = async () => {
-  if (!keyword.value) return
-  isLoading.value = true
-  urls.value = []
-  imageLoadingStates.value = []
-  imageErrorStates.value = []
-  try {
-    // 使用正确的 API 函数而不是原生 fetch
-    const response = await crawlOriginalUrlsUsingGet({
-      keyword: keyword.value,
-      offset: offset.value || 0
-    })
-    
-    if (response.data?.code === 0) {
-      // 后端为 BaseResponse 格式或直接数组的两种兼容
-      const arr = Array.isArray(response.data.data) ? response.data.data : response.data?.data
-      urls.value = Array.isArray(arr) ? arr.filter((u) => typeof u === 'string') : []
-      
-      // 初始化图片状态
-      imageLoadingStates.value = new Array(urls.value.length).fill(true)
-      imageErrorStates.value = new Array(urls.value.length).fill(false)
-      
-      // 重置所有图片的策略索引
-      imageLoadStrategies.value.clear()
-      urls.value.forEach((_, idx) => {
-        imageLoadStrategies.value.set(idx, 0)
-      })
-    } else {
-      throw new Error(response.data?.message || '抓取失败')
-    }
-  } catch (e) {
-    console.error('抓取失败', e)
-    urls.value = []
-    alert('抓取失败，请稍后重试')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// 跳转到以图搜图页面
-const goToImageSearch = () => {
-  router.push('/picture/search')
-}
-
-const getImageUrl = (url: string) => {
-  // 尝试通过代理服务器加载图片，避免跨域问题，但不限制尺寸
-  if (url && !url.startsWith('data:')) {
-    // 使用图片代理服务，但不添加尺寸限制，保持原图质量
-    return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=0&h=0&fit=outside`
-  }
-  return url
-}
-
 const getCleanImageUrl = (url: string) => {
   if (!url) return url
   
   try {
     let cleanedUrl = url
     
-    // 如果URL包含@符号，截取@之前的部分
     if (url.includes('@')) {
       cleanedUrl = url.split('@')[0]
       console.log(`URL清理(@): ${url} → ${cleanedUrl}`)
     }
     
-    // 如果URL包含查询参数（?），截取?之前的部分
     if (url.includes('?')) {
       cleanedUrl = url.split('?')[0]
       console.log(`URL清理(?): ${url} → ${cleanedUrl}`)
     }
     
-    // 如果URL包含#，截取#之前的部分
     if (url.includes('#')) {
       cleanedUrl = url.split('#')[0]
       console.log(`URL清理(#): ${url} → ${cleanedUrl}`)
@@ -311,8 +326,7 @@ const getCleanImageUrl = (url: string) => {
 }
 
 const buildName = (index: number) => {
-  const base = keyword.value || '图片'
-  return `${base}${index + 1}`
+  return `相似图片${index + 1}`
 }
 
 const shortUrl = (u: string, max = 48) => {
@@ -322,29 +336,23 @@ const shortUrl = (u: string, max = 48) => {
 
 const onImgError = (idx: number, event: Event) => {
   const img = event.target as HTMLImageElement
-  const originalUrl = displayUrls.value[idx]
+  const originalUrl = displaySearchUrls.value[idx]
   const currentStrategyIndex = imageLoadStrategies.value.get(idx) || 0
   
   console.warn(`图片加载失败 [${idx}]: 当前策略=${loadStrategies[currentStrategyIndex].name}, URL=${img.src}`)
   
-  // 如果还有更多策略可以尝试
   if (currentStrategyIndex < loadStrategies.length - 1) {
     const nextStrategyIndex = currentStrategyIndex + 1
     const nextStrategy = loadStrategies[nextStrategyIndex]
     
-    // 更新策略索引
     imageLoadStrategies.value.set(idx, nextStrategyIndex)
-    
-    // 重置加载状态，给下一个策略一次机会
     imageLoadingStates.value[idx] = true
     imageErrorStates.value[idx] = false
     
-    // 应用下一个策略
     applyStrategyToImage(img, nextStrategy, originalUrl)
     return
   }
   
-  // 如果所有策略都尝试过了，标记为最终失败
   console.error(`图片 [${idx}] 所有策略都尝试失败: ${originalUrl}`)
   imageErrorStates.value[idx] = true
   imageLoadingStates.value[idx] = false
@@ -361,24 +369,20 @@ const onImgLoad = (idx: number) => {
 }
 
 const retryLoadImage = (idx: number) => {
-  // 重置策略索引，从头开始
   imageLoadStrategies.value.set(idx, 0)
-  
   imageErrorStates.value[idx] = false
   imageLoadingStates.value[idx] = true
   
   const img = document.querySelector(`[alt="${buildName(idx)}"]`) as HTMLImageElement
   if (img) {
-    // 重试时，从第一个策略开始
     const firstStrategy = loadStrategies[0]
-    applyStrategyToImage(img, firstStrategy, displayUrls.value[idx])
+    applyStrategyToImage(img, firstStrategy, displaySearchUrls.value[idx])
   }
 }
 
 // 预览功能
 const previewImage = (url: string, idx: number) => {
   previewOriginalUrl.value = url
-  // 预览时直接使用原图，不通过代理服务
   previewImageUrl.value = url
   previewTitle.value = buildName(idx)
   showPreview.value = true
@@ -398,10 +402,8 @@ const onPreviewImgError = (event: Event) => {
   const originalUrl = previewOriginalUrl.value
   const currentSrc = img.src
   
-  // 检查当前src是否是清理后的URL
   const isCleanUrl = currentSrc !== originalUrl && !currentSrc.includes('images.weserv.nl')
   
-  // 如果是清理后的URL加载失败，直接标记为失败，不再重试
   if (isCleanUrl) {
     console.error(`预览清理后的URL也加载失败: ${currentSrc}`)
     previewError.value = true
@@ -409,24 +411,20 @@ const onPreviewImgError = (event: Event) => {
     return
   }
   
-  // 如果代理加载失败，尝试直接加载原图
   if (currentSrc.includes('images.weserv.nl')) {
     img.src = originalUrl
     return
   }
   
-  // 如果原图加载失败，尝试使用清理后的URL
   const cleanUrl = getCleanImageUrl(originalUrl)
   if (cleanUrl !== originalUrl) {
     console.warn(`预览原图加载失败，正在尝试使用清理后的URL: ${cleanUrl}`)
-    // 重置预览加载状态
     previewLoading.value = true
     previewError.value = false
     img.src = cleanUrl
     return
   }
   
-  // 如果执行到这里，说明没有清理后的URL可以尝试
   previewError.value = true
   previewLoading.value = false
 }
@@ -445,7 +443,6 @@ const copyUrl = async () => {
     }, 2000)
   } catch (err) {
     console.error('复制失败:', err)
-    // 降级方案
     const textArea = document.createElement('textarea')
     textArea.value = previewOriginalUrl.value
     document.body.appendChild(textArea)
@@ -479,8 +476,16 @@ const downloadImage = async () => {
 
 const goBackToList = () => {
   showPreview.value = false
-  // 可以考虑刷新列表或保持当前列表状态
 }
+
+// 监听输入URL变化，设置加载状态
+import { watch } from 'vue'
+watch(imageUrl, (newUrl) => {
+  if (newUrl) {
+    inputImageLoading.value = true
+    inputImageError.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -574,9 +579,9 @@ const goBackToList = () => {
   display: flex; 
   flex-direction: column; 
   gap: .5rem; 
-  min-width: 250px; 
+  min-width: 350px; 
   flex: 1;
-  max-width: 300px;
+  max-width: 500px;
 }
 .form-label { font-weight: 600; color: #cbd5e1; }
 .input-wrapper { position: relative; }
@@ -584,39 +589,60 @@ const goBackToList = () => {
 .input-border { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #667eea, #764ba2); transition: width .3s ease; }
 .form-input:focus { outline: none; background: rgba(255,255,255,1); border-color: #667eea; }
 .form-input:focus ~ .input-border { width: 100%; }
-.hint { color: var(--text-secondary); font-size: .85rem; }
 
 .actions { 
   display: flex; 
   align-items: center; 
-  gap: 1rem; 
+  gap: .5rem; 
   justify-content: center;
-  min-width: 300px;
-  flex-wrap: wrap;
+  min-width: 200px;
 }
 .btn { padding: .9rem 1.6rem; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; position: relative; overflow: hidden; }
 .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-.btn-secondary { 
-  background: linear-gradient(135deg, #10b981, #059669); 
-  color: white; 
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.btn-secondary:disabled { opacity: .6; cursor: not-allowed; }
-.btn-secondary:hover { 
-  background: linear-gradient(135deg, #059669, #047857); 
-  transform: translateY(-1px);
-  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-}
-.btn-icon { 
-  font-size: 1.1rem; 
-  margin-right: 0.25rem; 
-}
 .btn-glow { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent); transition: left .6s ease; }
 .btn:hover .btn-glow { left: 100%; }
+
+/* 输入图片预览区域 */
+.input-preview-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(17,24,39,0.5);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.input-preview {
+  display: flex;
+  justify-content: center;
+}
+
+.input-image-container {
+  position: relative;
+  width: 300px;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-image-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: opacity 0.3s ease;
+}
+
+.input-image-container img.img-loading {
+  opacity: 0.3;
+}
+
+.input-image-container img.img-error {
+  opacity: 0.1;
+}
 
 .result-section { margin-top: 1.5rem; }
 .section-title { margin: 0 0 .75rem; font-size: 1.1rem; color: #e5e7eb; }
@@ -654,6 +680,12 @@ const goBackToList = () => {
   animation: spin 1s linear infinite;
 }
 
+.loading-text {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -661,6 +693,8 @@ const goBackToList = () => {
 
 .error-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
 .error-text { font-size: 0.8rem; margin-bottom: 0.5rem; }
+.error-hint { font-size: 0.7rem; color: #9ca3af; }
+
 .retry-btn {
   padding: 0.3rem 0.8rem;
   background: #667eea;
@@ -766,7 +800,7 @@ const goBackToList = () => {
 
 .empty { text-align: center; color: var(--text-secondary); padding: 2rem 0; }
 
-/* 预览模态框样式 */
+/* 预览模态框样式 - 复用CrawlPictures的样式 */
 .preview-modal {
   position: fixed;
   top: 0;
@@ -798,75 +832,6 @@ const goBackToList = () => {
    display: flex;
    flex-direction: column;
  }
-
-.preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  background: rgba(17,24,39,0.8);
-  min-height: 60px;
-  border-radius: 16px 16px 0 0;
-}
-
-.preview-title {
-  margin: 0;
-  color: #e5e7eb;
-  font-size: 1.2rem;
-  font-weight: 600;
-  flex: 1;
-  margin-right: 1rem;
-}
-
-.preview-header-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.back-btn {
-  background: rgba(102,126,234,0.2);
-  border: 1px solid #667eea;
-  color: #e5e7eb;
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  white-space: nowrap;
-  min-width: fit-content;
-}
-
-.back-btn:hover {
-  background: rgba(102,126,234,0.3);
-  transform: translateY(-1px);
-}
-
-.back-icon {
-  font-size: 1rem;
-  font-weight: bold;
-  display: inline-block;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #cbd5e1;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: background 0.2s ease;
-}
-
-.close-btn:hover {
-  background: rgba(255,255,255,0.1);
-}
 
 .preview-body {
    display: flex;

@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.demo.annotation.AuthCheck;
 import com.example.demo.common.BaseResponse;
@@ -12,12 +13,15 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.exception.ThrowUtils;
 import com.example.demo.model.dto.picture.*;
+import com.example.demo.model.dto.space.SpaceAddRequest;
 import com.example.demo.model.entity.Picture;
+import com.example.demo.model.entity.Space;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.enums.PictureReviewStatusEnum;
 import com.example.demo.model.vo.PictureTagCategory;
 import com.example.demo.model.vo.PictureVO;
 import com.example.demo.service.PictureService;
+import com.example.demo.service.SpaceService;
 import com.example.demo.service.UserService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -40,6 +44,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.example.demo.manager.crawl.CrawlPictures;
+import com.example.demo.api.imagesearch.sub.BaiduUploadClient;
+import com.example.demo.api.imagesearch.sub.GetImageFirstUrlApi;
 
 @Slf4j
 @RestController
@@ -57,6 +63,8 @@ public class pictureController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private SpaceService spaceService;
 
     @Resource
     private PictureService pictureService;
@@ -86,23 +94,13 @@ public class pictureController {
     /**
      * 删除图片
      */
-   // @PostMapping("/delete")
+    @PostMapping("/delete")
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest , HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        long id = deleteRequest.getId();
-        // 判断是否存在
-        Picture oldPicture = pictureService.getById(id);
-        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可删除
-        if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
-        // 操作数据库
-        boolean result = pictureService.removeById(id);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+     pictureService.deletePicture(deleteRequest.getId(),loginUser);
         return ResultUtils.success(true);
     }
 
@@ -153,7 +151,7 @@ public class pictureController {
     }
 
     /**
-     * 根据 id 获取图片（封装类）
+     * 根据 id 获取图片（封装类）  前端未使用
      */
     @GetMapping("/get/vo")
     public BaseResponse<PictureVO> getPictureVOById(long id, HttpServletRequest request) {
@@ -161,21 +159,39 @@ public class pictureController {
         // 查询数据库
         Picture picture = pictureService.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+
+        //空间权限校验
+        Long spaceId=picture.getSpaceId();
+        if (spaceId != null) {
+            User user=userService.getLoginUser(request);
+            pictureService.checkPictureAuth(user,picture);
+        }
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVO(picture, request));
     }
 
     /**
-     * 分页获取图片列表（仅管理员可用）
+     * 分页获取图片列表（仅管理员可用）   前端使用了
      */
     @PostMapping("/list/page")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<Picture>> listPictureByPage(@RequestBody PictureQueryRequest pictureQueryRequest) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
+
+        // 创建分页对象
+        Page<Picture> page = new Page<>(current, size);
+
+        // 创建查询条件
+        QueryWrapper<Picture> queryWrapper = pictureService.getQueryWrapper(pictureQueryRequest);
+
+        // 添加空间ID为空的条件（且的关系）
+        queryWrapper.isNull("spaceId");
+
         // 查询数据库
-        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
-                pictureService.getQueryWrapper(pictureQueryRequest));
+        Page<Picture> picturePage = pictureService.page(page, queryWrapper);
+
+        // 返回结果
         return ResultUtils.success(picturePage);
     }
 
@@ -187,17 +203,37 @@ public class pictureController {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
-     //   ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        //   ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+
+        // 空间权限校验
+        Long spaceId = pictureQueryRequest.getSpaceId();
+// 公开图库
+        if (spaceId == null) {
+            // 普通用户默认只能查看已过审的公开数据
+            pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            pictureQueryRequest.setNullSpaceId(true);
+        } else {
+            // 私有空间
+            User loginUser = userService.getLoginUser(request);
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+            if (!loginUser.getId().equals(space.getUserId())) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
+            }
+
+            //需要让用户能够查到自己所有的图片，所以要把空间ID的限制去掉
+            pictureQueryRequest.setSpaceId(null);
+        }
 
 
-        // 普通用户默认只能查看已过审的数据
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+
+
 // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
 
         // 获取封装返回结果
-       return ResultUtils.success(pictureService.getPictureVOPage(picturePage,request));
+        return ResultUtils.success(pictureService.getPictureVOPage(picturePage,request));
     }
 
     /**
@@ -208,31 +244,9 @@ public class pictureController {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        // 在此处将实体类和 DTO 进行转换
-        Picture picture = new Picture();
-        BeanUtils.copyProperties(pictureEditRequest, picture);
-        // 注意将 list 转为 string
-        picture.setTags(JSONUtil.toJsonStr(pictureEditRequest.getTags()));
-        // 设置编辑时间
-        picture.setEditTime(new Date());
-        // 数据校验
-        pictureService.validPicture(picture);
+
         User loginUser = userService.getLoginUser(request);
-        // 判断是否存在
-        long id = pictureEditRequest.getId();
-        Picture oldPicture = pictureService.getById(id);
-        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可编辑
-        if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
-        //补充审核参数
-        pictureService.fillReviewParams(picture,loginUser);
-
-
-        // 操作数据库
-        boolean result = pictureService.updateById(picture);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+       pictureService.editPicture(pictureEditRequest,loginUser);
         return ResultUtils.success(true);
     }
 
@@ -253,7 +267,7 @@ public class pictureController {
 
 
     /**
-     * 用户上传/更新图片/文件上传
+     * 用户上传/更新图片/文件上传   前端使用了
      */
     @PostMapping("/add")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -262,9 +276,35 @@ public class pictureController {
                                              HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
 
-        //判断是上传还是更新图片
+       Long spaceId= pictureUpdateRequest.getSpaceId();
+     Boolean IsPublic=   pictureUpdateRequest.getIsPublic();
+
+        ThrowUtils.throwIf(IsPublic == null, ErrorCode.NOT_FOUND_ERROR);
+
+        //判断是上传还是更新图片  为空就是上传图片
         if(pictureUpdateRequest.getId()==null){
             PictureUploadRequest uploadRequest=new PictureUploadRequest();
+
+            //如果不是上传到公共空间，就携带空间ID
+            if(!IsPublic){
+
+                //如果空间ID为空，说明用户需要新建空间
+                if(spaceId==null){
+
+
+                    SpaceAddRequest spaceAddRequest=new SpaceAddRequest();
+                    spaceAddRequest.setSpaceName("默认空间");
+                    spaceAddRequest.setSpaceLevel(0);
+
+                    spaceId = spaceService.addSpace(spaceAddRequest, loginUser);
+                    pictureUpdateRequest.setSpaceId(spaceId);
+
+                }
+
+                uploadRequest.setSpaceId(spaceId);
+            }
+
+
 
             PictureVO pictureVO = pictureService.uploadPicture(multipartFile, uploadRequest, loginUser);
             pictureUpdateRequest.setId(pictureVO.getId());
@@ -319,7 +359,7 @@ public class pictureController {
 
 
     /**
-     * 通过 URL 上传/更新图片
+     * 通过 URL 上传/更新图片   前端使用
      */
     @PostMapping("/add/url")
     public BaseResponse<Boolean> addPictureByUrl(
@@ -327,14 +367,46 @@ public class pictureController {
             PictureUpdateRequest pictureUpdateRequest,
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
-        //判断是上传还是更新图片
+
+        Long spaceId= pictureUpdateRequest.getSpaceId();
+        Boolean IsPublic=   pictureUpdateRequest.getIsPublic();
+
+        ThrowUtils.throwIf(IsPublic == null, ErrorCode.NOT_FOUND_ERROR);
+
+        //判断是上传还是更新图片  为空就是上传图片
         if(pictureUpdateRequest.getId()==null){
             PictureUploadRequest uploadRequest=new PictureUploadRequest();
-            String fileUrl = pictureUploadRequest.getFileUrl();
 
+            //如果不是上传到公共空间，就携带空间ID
+            if(!IsPublic){
+
+                //如果空间ID为空，说明用户需要新建空间
+                if(spaceId==null){
+
+
+                    SpaceAddRequest spaceAddRequest=new SpaceAddRequest();
+                    spaceAddRequest.setSpaceName("默认空间");
+                    spaceAddRequest.setSpaceLevel(0);
+
+                    spaceId = spaceService.addSpace(spaceAddRequest, loginUser);
+                    pictureUpdateRequest.setSpaceId(spaceId);
+
+                }
+
+                uploadRequest.setSpaceId(spaceId);
+            }
+
+
+            String fileUrl = pictureUploadRequest.getFileUrl();
             PictureVO pictureVO = pictureService.uploadPicture(fileUrl, uploadRequest, loginUser);
             pictureUpdateRequest.setId(pictureVO.getId());
+
         }
+
+
+
+
+
 
 
         if ( pictureUpdateRequest.getId() <= 0) {
@@ -354,6 +426,8 @@ public class pictureController {
         long id = pictureUpdateRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+
+
 
 
         //补充审核参数
@@ -468,6 +542,50 @@ public class pictureController {
 
         // 返回结果
         return ResultUtils.success(pictureVOPage);
+    }
+
+    /**
+     * 以图搜图接口
+     * 前端传入图片URL，后端调用百度识图API获取相似图片URL列表
+     */
+    @PostMapping("/search/by-image")
+    public BaseResponse<List<String>> searchImageByUrl(@RequestParam("imageUrl") String imageUrl) {
+        try {
+            // 参数校验
+            ThrowUtils.throwIf(imageUrl == null || imageUrl.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "图片URL不能为空");
+            
+            log.info("开始以图搜图，输入图片URL: {}", imageUrl);
+            
+            // 1. 调用BaiduUploadClient.getImagePageUrl获取搜索结果页面URL
+            String searchPageUrl;
+            try {
+                searchPageUrl = BaiduUploadClient.getImagePageUrl(imageUrl.trim());
+                log.info("获取到搜索结果页面URL: {}", searchPageUrl);
+            } catch (Exception e) {
+                log.error("调用百度识图API失败", e);
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片搜索失败：" + e.getMessage());
+            }
+            
+            // 2. 调用GetImageFirstUrlApi.getImageUrls解析图片URL列表
+            List<String> imageUrls;
+            try {
+                imageUrls = GetImageFirstUrlApi.getImageUrls(searchPageUrl);
+                log.info("解析到 {} 个图片URL", imageUrls.size());
+            } catch (Exception e) {
+                log.error("解析搜索结果页面失败", e);
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "解析搜索结果失败：" + e.getMessage());
+            }
+            
+            // 3. 返回图片URL列表
+            return ResultUtils.success(imageUrls);
+            
+        } catch (BusinessException e) {
+            // 业务异常直接抛出
+            throw e;
+        } catch (Exception e) {
+            log.error("以图搜图接口发生未知错误", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统内部错误");
+        }
     }
 
 

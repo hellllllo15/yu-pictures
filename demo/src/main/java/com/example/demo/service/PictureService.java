@@ -5,10 +5,7 @@ package com.example.demo.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.example.demo.model.dto.picture.PictureQueryRequest;
-import com.example.demo.model.dto.picture.PictureUploadByBatchRequest;
-import com.example.demo.model.dto.picture.PictureUploadRequest;
-import com.example.demo.model.dto.picture.PictureReviewRequest;
+import com.example.demo.model.dto.picture.*;
 import com.example.demo.model.entity.Picture;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.vo.PictureVO;
@@ -95,4 +92,15 @@ public interface PictureService extends IService<Picture> {
         return CrawlPictures.crawl(keyword, offset);
     }
 
+
+    //校验空间图片的权限
+    public void checkPictureAuth(User loginUser,Picture picture);
+
+
+    //删除图片
+    public void deletePicture(long pictureId, User loginUser);
+
+
+    //编辑图片
+    public void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 }

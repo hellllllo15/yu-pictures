@@ -13,6 +13,7 @@ import java.util.Date;
 public class Picture {
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
+    private  Long spaceId;
     private String url;
     private String name;
     private String introduction;

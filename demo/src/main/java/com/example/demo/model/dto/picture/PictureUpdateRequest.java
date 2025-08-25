@@ -38,6 +38,17 @@ public class PictureUpdateRequest implements Serializable {
 
 
 
+    /**
+     * 用户空间ID，如果携带，上传到私密空间
+     */
+    private  Long spaceId;
+
+
+    //用于判断是否要上传到公共空间
+    Boolean isPublic;
+
+
+
 
     private static final long serialVersionUID = 1L;
 }

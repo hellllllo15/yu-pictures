@@ -146,6 +146,37 @@
           </div>
           
           <div class="form-group">
+            <label class="form-label">上传空间</label>
+            <div class="input-wrapper">
+              <div class="space-selection">
+                <div class="space-options">
+                  <label class="space-option">
+                    <input 
+                      type="radio" 
+                      v-model="uploadToPrivate" 
+                      :value="true"
+                      class="space-radio"
+                    />
+                    <span class="option-text">上传到私密空间</span>
+                    <span class="option-hint">（系统会自动创建或使用您的私密空间）</span>
+                  </label>
+                  <label class="space-option">
+                    <input 
+                      type="radio" 
+                      v-model="uploadToPrivate" 
+                      :value="false"
+                      class="space-radio"
+                    />
+                    <span class="option-text">上传到公共空间</span>
+                    <span class="option-hint">（所有用户可见）</span>
+                  </label>
+                </div>
+              </div>
+              <div class="input-border"></div>
+            </div>
+          </div>
+          
+          <div class="form-group">
             <label class="form-label">标签</label>
             <div class="input-wrapper">
               <div class="tags-container">
@@ -208,6 +239,8 @@
     addPictureByUrlUsingPost,
     addPictureUsingPost
   } from '../../a/api/pictureController'
+import { listSpaceVoByPageUsingPost } from '../../a/api/spaceController'
+import { useLoginUserStore } from '../../stores/useLoginUserStore'
 
   // 文件输入引用
   const fileInput = ref<HTMLInputElement>()
@@ -228,6 +261,13 @@
   // 分类和标签数据
   const categories = ref<string[]>([])
   const tags = ref<string[]>([])
+
+  // 空间选择相关
+  const uploadToPrivate = ref(true) // 默认选择私密空间
+  const userSpaceId = ref<number | null>(null)
+  
+  // 用户登录状态
+  const loginUserStore = useLoginUserStore()
 
   // 路由参数（用于编辑预填）
   const route = useRoute()
@@ -253,6 +293,36 @@
       }
     } catch (error) {
       console.error('获取分类和标签失败:', error)
+    }
+  }
+
+  // 获取用户空间ID
+  const fetchUserSpaceId = async () => {
+    try {
+      // 确保用户已登录
+      if (!loginUserStore.loginUser.id) {
+        await loginUserStore.fetchLoginUser()
+      }
+      
+      if (loginUserStore.loginUser.id) {
+        const response = await listSpaceVoByPageUsingPost({
+          current: 1,
+          pageSize: 10,
+          userId: loginUserStore.loginUser.id
+        })
+        
+        if (response.data?.code === 0 && response.data.data) {
+          const pageData = response.data.data
+          const userSpaces = pageData.records || []
+          // 如果有用户空间，使用第一个
+          if (userSpaces.length > 0) {
+            userSpaceId.value = userSpaces[0].id || null
+          }
+        }
+      }
+    } catch (error) {
+      console.error('获取用户空间失败:', error)
+      // 即使获取失败，也不影响上传，后端会自动创建
     }
   }
 
@@ -401,22 +471,35 @@
     if (isUrlMode.value) {
       if (!isValidUrl.value) {
         showMessage('请输入以 http 或 https 开头的图片链接', 'error')
-      return
-    }
+        return
+      }
       isUploading.value = true
       try {
+        // 准备上传参数 - 将基本参数和业务参数都放在params中（URL查询参数）
+        const params = {
+          name: formData.name,
+          introduction: formData.introduction,
+          category: formData.category || undefined,
+          id: editingId.value || undefined,
+          isPublic: !uploadToPrivate.value, // 私密空间为false，公共空间为true
+          spaceId: uploadToPrivate.value && userSpaceId.value ? userSpaceId.value : undefined
+        } as any
+        
+        // 同时将业务参数放在body中，确保兼容性
+        const body = {
+          fileUrl: urlInput.value,
+          picName: formData.name,
+          tags: formData.tags.length > 0 ? formData.tags : undefined,
+          isPublic: !uploadToPrivate.value, // 私密空间为false，公共空间为true
+          spaceId: uploadToPrivate.value && userSpaceId.value ? userSpaceId.value : undefined
+        } as any
+        
+        // 添加调试日志
+        console.log('URL上传参数:', { params, body })
+        
         const resp = await addPictureByUrlUsingPost(
-          {
-            name: formData.name,
-            introduction: formData.introduction,
-            category: formData.category,
-            tags: Array.isArray(formData.tags) ? formData.tags : [formData.tags],
-            id: editingId.value ? Number(editingId.value) : undefined
-          },
-          { 
-            fileUrl: urlInput.value,
-            picName: formData.name
-          }
+          params,
+          body
         )
         if (resp.data?.code === 0) {
           showMessage('图片 URL 上传成功！', 'success')
@@ -449,15 +532,26 @@
         }
       }, 200)
       
+      // 准备上传参数 - 将基本参数放在params中，复杂参数放在body中
+      const params = {
+        name: formData.name,
+        introduction: formData.introduction,
+        category: formData.category || undefined,
+        id: editingId.value || undefined
+      } as any
+      
+      const body = {
+        tags: formData.tags.length > 0 ? formData.tags : undefined,
+        isPublic: !uploadToPrivate.value, // 私密空间为false，公共空间为true
+        spaceId: uploadToPrivate.value && userSpaceId.value ? userSpaceId.value : undefined
+      }
+      
+      // 添加调试日志
+      console.log('文件上传参数:', { params, body })
+      
       const response = await addPictureUsingPost(
-        {
-          name: formData.name,
-          introduction: formData.introduction,
-          category: formData.category,
-          tags: Array.isArray(formData.tags) ? formData.tags : [formData.tags],
-          id: editingId.value ? Number(editingId.value) : undefined
-        },
-        {},
+        params,
+        body,
         selectedFile.value
       )
       clearInterval(progressInterval)
@@ -487,11 +581,14 @@
       tags: []
     })
     urlInput.value = ''
+    // 重置空间选择
+    uploadToPrivate.value = true
   }
 
   // 组件挂载时获取分类和标签数据
   onMounted(() => {
     fetchTagCategories()
+    fetchUserSpaceId() // 获取用户空间ID
     // 从路由读取预填数据
     const q = route.query as any
     if (q) {
@@ -870,6 +967,53 @@
     width: 100%;
   }
   
+  /* 空间选择样式 */
+  .space-selection {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+  }
+  
+  .space-options {
+    display: flex;
+    gap: 2rem;
+  }
+  
+  .space-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+  
+  .space-option:hover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+  
+  .space-radio {
+    width: 18px;
+    height: 18px;
+    accent-color: #667eea;
+    cursor: pointer;
+  }
+  
+  .option-text {
+    font-weight: 600;
+    color: #1e3c72;
+    font-size: 0.95rem;
+  }
+  
+  .option-hint {
+    font-size: 0.8rem;
+    color: #718096;
+    font-weight: normal;
+    margin-left: 0.5rem;
+  }
+  
   /* 下拉框样式 */
   .form-select {
     width: 100%;
@@ -1060,6 +1204,15 @@
     
     .btn {
       width: 100%;
+    }
+    
+    .space-options {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .space-option {
+      justify-content: center;
     }
   }
   

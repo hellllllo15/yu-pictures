@@ -92,7 +92,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public  # 注释掉public，允许上传public文件夹
 
 # Vuepress build output
 .vuepress/dist

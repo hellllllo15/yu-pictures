@@ -24,6 +24,8 @@
           <RouterLink to="/" class="nav-item" active-class="active">首页</RouterLink>
           <RouterLink to="/admin/userManage" class="nav-item" active-class="active">用户管理</RouterLink>
           <RouterLink to="/admin/pictureManage" class="nav-item" active-class="active">图片管理</RouterLink>
+          <RouterLink to="/admin/spaceManage" class="nav-item" active-class="active">空间管理</RouterLink>
+          <RouterLink to="/space/my" class="nav-item" active-class="active">我的空间</RouterLink>
           <RouterLink to="/picture/upload" class="nav-item" active-class="active">上传图片</RouterLink>
           <RouterLink to="/picture/crawl" class="nav-item" active-class="active">抓取图片</RouterLink>
           <RouterLink to="/background" class="nav-item" active-class="active">切换背景</RouterLink>
@@ -104,8 +106,8 @@
           <h3 class="footer-title">云图库</h3>
           <p class="footer-desc">发现世界的美好瞬间，精选全球优质图片，让创意无限可能</p>
           <div class="contact-info">
-            <span>📧 contact@yuntuku.com</span>
-            <span>📱 +86 400-123-4567</span>
+            <span>📧</span>
+            <span>📱 </span>
           </div>
         </div>
 

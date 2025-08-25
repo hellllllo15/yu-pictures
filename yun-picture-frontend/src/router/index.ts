@@ -7,7 +7,11 @@ import UserManage from '../pages/admin/UserManage.vue'
 import AddPicture from '../components/picture/AddPicture.vue'
 import BackGround from '../pages/background/BackGround.vue'
 import PictureManage from '../pages/admin/PictureManage.vue'
+import SpaceManage from '../pages/admin/SpaceManage.vue'
+import AddSpace from '../components/space/AddSpace.vue'
+import MySpace from '../components/space/MySpace.vue'
 import CrawlPictures from '../components/picture/CrawlPictures.vue'
+import CrawlByUrl from '../components/picture/CrawlByUrl.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,6 +47,21 @@ const router = createRouter({
       component: PictureManage,
     },
     {
+      path: '/admin/spaceManage',
+      name: '空间管理',
+      component: SpaceManage,
+    },
+    {
+      path: '/space/add',
+      name: '创建空间',
+      component: AddSpace,
+    },
+    {
+      path: '/space/my',
+      name: '我的空间',
+      component: MySpace,
+    },
+    {
       path: '/picture/upload',
       name: '上传图片',
       component: AddPicture,
@@ -51,6 +70,11 @@ const router = createRouter({
       path: '/picture/crawl',
       name: '批量抓取',
       component: CrawlPictures,
+    },
+    {
+      path: '/picture/search',
+      name: '以图搜图',
+      component: CrawlByUrl,
     },
     {
       path: '/background',
