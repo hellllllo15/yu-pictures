@@ -26,7 +26,7 @@ import java.util.List;
 
 //@Deprecated:已废弃，改为upload包的模版方法进行优化
 @Service
-@Slf4j
+//@Slf4j
 @Deprecated
 public class FileManager {
 
@@ -76,7 +76,7 @@ public class FileManager {
             uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
             return uploadPictureResult;
         } catch (Exception e) {
-            log.error("图片上传到对象存储失败", e);
+          //  log.error("图片上传到对象存储失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
         } finally {
             this.deleteTempFile(file);
@@ -113,7 +113,7 @@ public class FileManager {
         // 删除临时文件
         boolean deleteResult = file.delete();
         if (!deleteResult) {
-            log.error("file delete error, filepath = {}", file.getAbsolutePath());
+          //  log.error("file delete error, filepath = {}", file.getAbsolutePath());
         }
     }
 

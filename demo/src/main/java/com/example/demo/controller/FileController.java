@@ -21,7 +21,7 @@ import java.io.File;
 import java.io.IOException;
 
 //文件上传功能
-@Slf4j
+//@Slf4j
 @RestController
 @RequestMapping
 public class FileController {
@@ -51,14 +51,14 @@ public class FileController {
             // 返回可访问地址
             return ResultUtils.success(filepath);
         } catch (Exception e) {
-            log.error("file upload error, filepath = " + filepath, e);
+           // log.error("file upload error, filepath = " + filepath, e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
         } finally {
             if (file != null) {
                 // 删除临时文件
                 boolean delete = file.delete();
                 if (!delete) {
-                    log.error("file delete error, filepath = {}", filepath);
+                //    log.error("file delete error, filepath = {}", filepath);
                 }
             }
         }
@@ -88,7 +88,7 @@ public class FileController {
             response.getOutputStream().write(bytes);
             response.getOutputStream().flush();
         } catch (Exception e) {
-            log.error("file download error, filepath = " + filepath, e);
+           // log.error("file download error, filepath = " + filepath, e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "下载失败");
         } finally {
             if (cosObjectInput != null) {

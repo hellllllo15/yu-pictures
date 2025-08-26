@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-@Slf4j
+//@Slf4j
 @Service
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> implements PictureService {
 
@@ -444,7 +444,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         for (Element imgElement : imgElementList) {
             String fileUrl = imgElement.attr("src");
             if (StrUtil.isBlank(fileUrl)) {
-                log.info("当前链接为空，已跳过: {}", fileUrl);
+             //   log.info("当前链接为空，已跳过: {}", fileUrl);
                 continue;
             }
             // 处理图片上传地址，防止出现转义问题
@@ -462,7 +462,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             }
             try {
                 PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
-                log.info("图片上传成功, id = {}", pictureVO.getId());
+               // log.info("图片上传成功, id = {}", pictureVO.getId());
                 uploadCount++;
             } catch (Exception e) {
                 log.error("图片上传失败", e);

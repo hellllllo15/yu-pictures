@@ -17,7 +17,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.util.Date;
 
-@Slf4j
+//@Slf4j
 public abstract class PictureUploadTemplate {  
   
     @Resource
@@ -55,7 +55,7 @@ public abstract class PictureUploadTemplate {
             // 5. 封装返回结果  
             return buildResult(originFilename, file, uploadPath, imageInfo);  
         } catch (Exception e) {  
-            log.error("图片上传到对象存储失败", e);  
+           // log.error("图片上传到对象存储失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
         } finally {  
             // 6. 清理临时文件  
@@ -105,7 +105,7 @@ public abstract class PictureUploadTemplate {
         }  
         boolean deleteResult = file.delete();  
         if (!deleteResult) {  
-            log.error("file delete error, filepath = {}", file.getAbsolutePath());  
+          //  log.error("file delete error, filepath = {}", file.getAbsolutePath());
         }  
     }  
 }

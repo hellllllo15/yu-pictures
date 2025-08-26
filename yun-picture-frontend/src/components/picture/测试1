@@ -1,0 +1,18 @@
+cd yun-picture-frontend && npm install fabric
+cd yun-picture-frontend && npm install fabric --save
+npm install fabric --save
+
+
+npm install @types/fabric --save-dev
+
+图片编辑功能已完成！
+✅ 已实现的功能：
+✅ 安装编辑库
+安装了 fabric.js 图片编辑库
+安装了对应的 TypeScript 类型定义
+✅ CrawlPictures.vue 编辑功能
+在预览模态框中添加了"编辑图片"按钮
+实现了完整的图片编辑器界面
+支持多种编辑工具：画笔、文字、矩形、圆形
+支持颜色选择和画笔粗细调节
+支持清空画布和撤销操作

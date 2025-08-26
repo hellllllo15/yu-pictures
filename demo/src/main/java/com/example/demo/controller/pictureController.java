@@ -47,7 +47,7 @@ import com.example.demo.manager.crawl.CrawlPictures;
 import com.example.demo.api.imagesearch.sub.BaiduUploadClient;
 import com.example.demo.api.imagesearch.sub.GetImageFirstUrlApi;
 
-@Slf4j
+//@Slf4j
 @RestController
 @RequestMapping("/picture")
 public class pictureController {
@@ -554,15 +554,15 @@ public class pictureController {
             // 参数校验
             ThrowUtils.throwIf(imageUrl == null || imageUrl.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "图片URL不能为空");
             
-            log.info("开始以图搜图，输入图片URL: {}", imageUrl);
+         //   log.info("开始以图搜图，输入图片URL: {}", imageUrl);
             
             // 1. 调用BaiduUploadClient.getImagePageUrl获取搜索结果页面URL
             String searchPageUrl;
             try {
                 searchPageUrl = BaiduUploadClient.getImagePageUrl(imageUrl.trim());
-                log.info("获取到搜索结果页面URL: {}", searchPageUrl);
+             //   log.info("获取到搜索结果页面URL: {}", searchPageUrl);
             } catch (Exception e) {
-                log.error("调用百度识图API失败", e);
+             //   log.error("调用百度识图API失败", e);
                 throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片搜索失败：" + e.getMessage());
             }
             
@@ -570,9 +570,9 @@ public class pictureController {
             List<String> imageUrls;
             try {
                 imageUrls = GetImageFirstUrlApi.getImageUrls(searchPageUrl);
-                log.info("解析到 {} 个图片URL", imageUrls.size());
+              //  log.info("解析到 {} 个图片URL", imageUrls.size());
             } catch (Exception e) {
-                log.error("解析搜索结果页面失败", e);
+            //    log.error("解析搜索结果页面失败", e);
                 throw new BusinessException(ErrorCode.OPERATION_ERROR, "解析搜索结果失败：" + e.getMessage());
             }
             
@@ -583,7 +583,7 @@ public class pictureController {
             // 业务异常直接抛出
             throw e;
         } catch (Exception e) {
-            log.error("以图搜图接口发生未知错误", e);
+          //  log.error("以图搜图接口发生未知错误", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统内部错误");
         }
     }
