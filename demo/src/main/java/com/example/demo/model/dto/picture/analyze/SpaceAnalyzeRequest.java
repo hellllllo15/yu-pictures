@@ -17,7 +17,7 @@ public class SpaceAnalyzeRequest implements Serializable {
     /**
      * 是否查询公共图库
      */
-    private boolean queryPublic;
+    private boolean queryPublic=false;
 
     /**
      * 全空间分析

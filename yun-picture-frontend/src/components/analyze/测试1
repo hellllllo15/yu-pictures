@@ -1,0 +1,46 @@
+在需要使用图表的页面 JS 引入：
+
+▼
+javascript
+
+import VChart from "vue-echarts";
+import "echarts";
+然后就可以使用组件了，示例代码：
+
+▼
+javascript
+
+<v-chart :option="options" style="height: 300px" />
+上述代码中，option 的值包括了图表的基本信息、图表的数据等，可以从 ECharts 官网的示例 中快速学习和获取。Echarts 提供了 Playground 练习网站，建议先在网站上调试出自己想要的效果，再尝试在程序中构造 option 对象：
+
+
+由于分析需求较多，如果都在一个页面中编写所有的分析组件代码，会让页面过于复杂。所以我们把每个分析需求的图表展示和数据获取逻辑都封装为一个独立的组件，统一放在 components/analyze 目录下，之后分析页面（父页面）引入这些组件即可。
+
+每个组件的开发؜模式都是类似的，先定义属性，‏每个组件都要接受父组件传来的​查询范围参数，这样父页面可以⁢灵活指定要查询的空间范围，并⁠统一让所有分析图表重新加载。
+
+▼
+typescript
+
+interface Props {
+  queryAll?: boolean
+  queryPublic?: boolean
+  spaceId?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  queryAll: false,
+  queryPublic: false,
+})
+每个组件的؜样式风格可以统一，‏比如都用卡片进行包​装、指定最大高度、⁢给图表应用 loa⁠ding 效果：
+
+▼
+vue
+
+<template>
+  <div class="space-xxx-analyze">
+    <a-card title="分析需求名称">
+      <v-chart :option="options" style="height: 320px" :loading="loading" />
+    </a-card>
+  </div>
+</template>
+每个组件也都؜需要在加载时调用后端接‏口获取数据，并且计算展​示图表需要的 opti⁢on，不同的需求对应的⁠代码不同，需要定制开发。

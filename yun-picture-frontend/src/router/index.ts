@@ -12,6 +12,7 @@ import AddSpace from '../components/space/AddSpace.vue'
 import MySpace from '../components/space/MySpace.vue'
 import CrawlPictures from '../components/picture/CrawlPictures.vue'
 import CrawlByUrl from '../components/picture/CrawlByUrl.vue'
+import SpaceAnalyzePage from '../pages/analyze/SpaceAnalyzePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -80,6 +81,11 @@ const router = createRouter({
       path: '/background',
       name: '切换背景',
       component: BackGround,
+    },
+    {
+      path: '/analyze/space',
+      name: '空间分析',
+      component: SpaceAnalyzePage,
     },
   ],
 })

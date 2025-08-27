@@ -1,0 +1,59 @@
+空间资源使用分析
+通过统计当前空间已使用大小与总配额的比例，以及图片数量与最大允许数量的占比，帮助用户直观了解空间使用状态，及时清理或升级空间。图表形式推荐使用 仪表盘 来展示比例，类似进度条，可以更直观地了解比例。
+
+我们使用的 Ant Design 组件库中就自带了 进度条组件，支持仪表盘的展示方式，无需使用 ECharts。a4+VSCiwymliFBbOmcVMeAa6Vg2GOt84e3o0CHtBmxA=
+
+1）编写获取数据的逻辑：
+
+▼
+typescript
+
+// 图表数据
+const data = ref<API.SpaceUsageAnalyzeResponse>({})
+const loading = ref(true)
+
+/**
+ * 加载数据
+ */
+const fetchData = async () => {
+  loading.value = true
+  const res = await getSpaceUsageAnalyzeUsingPost({
+    queryAll: props.queryAll,
+    queryPublic: props.queryPublic,
+    spaceId: props.spaceId,
+  })
+  if (res.data.code === 0 && res.data.data) {
+    data.value = res.data.data
+  } else {
+    message.error('获取数据失败，' + res.data.message)
+  }
+  loading.value = false
+}
+
+/**
+ * 监听变量，改变时触发数据的重新加载
+ */
+watchEffect(() => {
+  fetchData()
+})
+和之前不同的是؜，为了让组件的属性变化时重新‏加载图表，我们使用 watc​hEffect 来监听所有动⁢态变量，只要有任何一个值发生⁠变化，都会重新执行封装的函数。a4+VSCiwymliFBbOmcVMeAa6Vg2GOt84e3o0CHtBmxA=
+
+2）编写图表结构。该组件要展示存储空间使用比例和图片数量使用比例，因此采用一行两列的 Flex 布局：
+
+▼
+vue
+
+<a-flex gap="middle">
+  <a-card title="存储空间" style="width: 50%">
+    <div style="height: 320px; text-align: center">
+      <h3>{{ formatSize(data.usedSize) }} / {{ data.maxSize ? formatSize(data.maxSize) : '无限制' }}</h3>
+      <a-progress type="dashboard" :percent="data.sizeUsageRatio ?? 0" />
+    </div>
+  </a-card>
+  <a-card title="图片数量" style="width: 50%">
+    <div style="height: 320px; text-align: center">
+      <h3>{{ data.usedCount }} / {{ data.maxCount ?? '无限制' }} </h3>
+      <a-progress type="dashboard" :percent="data.countUsageRatio ?? 0" />
+    </div>
+  </a-card>
+</a-flex>
