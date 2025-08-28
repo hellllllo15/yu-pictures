@@ -12,6 +12,8 @@ import com.example.demo.constant.UserConstant;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.exception.ThrowUtils;
+import com.example.demo.manager.auth.annotation.SaSpaceCheckPermission;
+import com.example.demo.manager.auth.model.SpaceUserPermissionConstant;
 import com.example.demo.model.dto.picture.*;
 import com.example.demo.model.dto.space.SpaceAddRequest;
 import com.example.demo.model.entity.Picture;
@@ -79,6 +81,7 @@ public class pictureController {
      */
     @PostMapping("/upload")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestParam("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -95,6 +98,7 @@ public class pictureController {
      * 删除图片
      */
     @PostMapping("/delete")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest , HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -240,6 +244,7 @@ public class pictureController {
      * 编辑图片（给用户使用）  前端未使用
      */
     @PostMapping("/edit")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest , HttpServletRequest request) {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -347,6 +352,7 @@ public class pictureController {
      * 通过 URL 上传图片（可重新上传）  前端未使用
      */
     @PostMapping("/upload/url")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {

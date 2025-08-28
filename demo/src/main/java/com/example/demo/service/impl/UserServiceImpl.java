@@ -3,6 +3,7 @@ package com.example.demo.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
+import com.example.demo.manager.auth.StpKit;
 import com.example.demo.model.dto.user.UserQueryRequest;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.enums.UserRoleEnum;
@@ -118,6 +119,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         // 3. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
+        //记录用户登录状态到Sa-token
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(USER_LOGIN_STATE, user);
         return this.getLoginUserVO(user);
     }
 

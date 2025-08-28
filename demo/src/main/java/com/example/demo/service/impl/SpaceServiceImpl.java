@@ -14,13 +14,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.demo.model.dto.space.SpaceAddRequest;
 import com.example.demo.model.dto.space.SpaceQueryRequest;
 import com.example.demo.model.entity.Space;
+import com.example.demo.model.entity.SpaceUser;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.enums.SpaceLevelEnum;
+import com.example.demo.model.enums.SpaceRoleEnum;
 import com.example.demo.model.enums.SpaceTypeEnum;
 import com.example.demo.model.vo.SpaceVO;
 import com.example.demo.model.vo.UserVO;
 import com.example.demo.service.PictureService;
 import com.example.demo.service.SpaceService;
+import com.example.demo.service.SpaceUserService;
 import com.example.demo.service.UserService;
 import org.springframework.beans.BeanUtils;
 
@@ -44,6 +47,9 @@ public class SpaceServiceImpl  extends ServiceImpl<SpaceMapper, Space> implement
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private SpaceUserService spaceUserService;
 
     //判断是更新还是创建空间
     @Override
@@ -167,6 +173,18 @@ public class SpaceServiceImpl  extends ServiceImpl<SpaceMapper, Space> implement
                 // 写入数据库
                 boolean result = this.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
+               // 如果是团队空间，关联新增团队成员记录
+                if (SpaceTypeEnum.TEAM.getValue() == spaceAddRequest.getSpaceType()) {
+                    SpaceUser spaceUser = new SpaceUser();
+                    spaceUser.setSpaceId(space.getId());
+                    spaceUser.setUserId(userId);
+                    spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
+                    result = spaceUserService.save(spaceUser);
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
+                }
+
+
                 // 返回新写入的数据 id
                 return space.getId();
             });
