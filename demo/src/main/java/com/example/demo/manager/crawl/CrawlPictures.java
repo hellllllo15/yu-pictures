@@ -36,6 +36,8 @@ public class CrawlPictures{
 		String encodedQ = URLEncoder.encode(keyword, StandardCharsets.UTF_8);
 		String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&first=%d&count=20&relp=20&apc=0&datsrc=I&mmasync=1", encodedQ, first);
 
+
+
 		try {
 			Document document = Jsoup.connect(fetchUrl)
 					.userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36")

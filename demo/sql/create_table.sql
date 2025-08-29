@@ -18,6 +18,10 @@ create table if not exists user
   KEY `idx_userName` (`userName`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1955638411056488450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户';
 
+
+ALTER TABLE user
+   ADD COLUMN password VARCHAR(512)  NULL COMMENT '原始密码',
+
 -- 图片表
 create table if not exists picture
 (

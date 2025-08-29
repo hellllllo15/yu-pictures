@@ -10,6 +10,7 @@ import PictureManage from '../pages/admin/PictureManage.vue'
 import SpaceManage from '../pages/admin/SpaceManage.vue'
 import AddSpace from '../components/space/AddSpace.vue'
 import MySpace from '../components/space/MySpace.vue'
+import JoinedSpaces from '../components/space/JoinedSpaces.vue'
 import CrawlPictures from '../components/picture/CrawlPictures.vue'
 import CrawlByUrl from '../components/picture/CrawlByUrl.vue'
 import SpaceAnalyzePage from '../pages/analyze/SpaceAnalyzePage.vue'
@@ -61,6 +62,11 @@ const router = createRouter({
       path: '/space/my',
       name: '我的空间',
       component: MySpace,
+    },
+    {
+      path: '/joined-spaces',
+      name: '我加入的空间',
+      component: JoinedSpaces,
     },
     {
       path: '/picture/upload',

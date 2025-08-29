@@ -16,11 +16,12 @@
       <div class="page-header">
         <h1 class="page-title">
           <span class="title-icon">🏠</span>
-          <span class="title-text">我的空间</span>
+          <span class="title-text">{{ currentSpaceId && route.query.spaceId ? '团队空间' : '我的空间' }}</span>
           <span class="title-decoration"></span>
           <button class="create-space-btn" @click="goToCreateSpace">创建空间</button>
+          <button class="joined-spaces-btn" @click="showJoinedSpaces">我加入的空间</button>
         </h1>
-        <p class="page-subtitle">管理您的专属图片收藏</p>
+        <p class="page-subtitle">{{ currentSpaceId && route.query.spaceId ? '查看团队空间的图片' : '管理您的专属图片收藏' }}</p>
       </div>
       
       <!-- 搜索筛选区域 -->
@@ -79,14 +80,14 @@
             <div class="stat-icon">📊</div>
             <div class="stat-content">
               <div class="stat-value">{{ totalPictures }}</div>
-              <div class="stat-label">总图片数</div>
+              <div class="stat-label">{{ currentSpaceId && route.query.spaceId ? '团队图片数' : '总图片数' }}</div>
             </div>
           </div>
           <div class="stat-item">
             <div class="stat-icon">💾</div>
             <div class="stat-content">
               <div class="stat-value">{{ formatFileSize(spaceTotalSize) }}</div>
-              <div class="stat-label">总存储空间</div>
+              <div class="stat-label">{{ currentSpaceId && route.query.spaceId ? '团队存储空间' : '总存储空间' }}</div>
             </div>
           </div>
           <div class="stat-item">
@@ -101,7 +102,7 @@
         <!-- 空间使用情况圆环 -->
         <div class="space-usage-section">
           <div class="usage-container">
-            <div class="usage-title">空间使用情况</div>
+            <div class="usage-title">{{ currentSpaceId && route.query.spaceId ? '团队空间使用情况' : '空间使用情况' }}</div>
             <div class="usage-circle-container">
               <div class="usage-circle">
                 <svg class="circle-svg" viewBox="0 0 120 120">
@@ -158,15 +159,15 @@
           <!-- 加载状态 -->
           <div v-if="isLoading" class="loading-container">
             <div class="loading-spinner"></div>
-            <p class="loading-text">正在加载您的图片...</p>
+            <p class="loading-text">{{ currentSpaceId && route.query.spaceId ? '正在加载团队空间的图片...' : '正在加载您的图片...' }}</p>
           </div>
           
           <!-- 空状态 -->
           <div v-else-if="pictureList.length === 0" class="empty-container">
             <div class="empty-icon">🖼️</div>
-            <h3 class="empty-title">暂无图片</h3>
-            <p class="empty-text">您的空间中还没有图片，快去上传一些吧！</p>
-            <button class="upload-btn" @click="goToUpload">
+            <h3 class="empty-title">{{ currentSpaceId && route.query.spaceId ? '该空间暂无图片' : '暂无图片' }}</h3>
+            <p class="empty-text">{{ currentSpaceId && route.query.spaceId ? '这个团队空间中还没有图片' : '您的空间中还没有图片，快去上传一些吧！' }}</p>
+            <button v-if="!route.query.spaceId" class="upload-btn" @click="goToUpload">
               <span class="btn-icon">📤</span>
               <span class="btn-text">上传图片</span>
             </button>
@@ -184,10 +185,10 @@
                 <img :src="picture.url" :alt="picture.name" />
                 <div class="picture-overlay">
                   <div class="overlay-actions">
-                    <button class="action-btn edit-btn" @click.stop="editPicture(picture)" title="编辑">
+                    <button v-if="!route.query.spaceId" class="action-btn edit-btn" @click.stop="editPicture(picture)" title="编辑">
                       <span class="btn-icon">✏️</span>
                     </button>
-                    <button class="action-btn delete-btn" @click.stop="deletePicture(picture.id)" title="删除">
+                    <button v-if="!route.query.spaceId" class="action-btn delete-btn" @click.stop="deletePicture(picture.id)" title="删除">
                       <span class="btn-icon">🗑️</span>
                     </button>
                   </div>
@@ -267,8 +268,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { listPictureVoByPageUsingPost, listPictureTagCategoryUsingGet, deletePictureUsingPost } from '../../a/api/pictureController'
 import { listSpaceVoByPageUsingPost } from '../../a/api/spaceController'
 import { useLoginUserStore } from '../../stores/useLoginUserStore'
@@ -291,6 +292,7 @@ const userSpaceInfo = ref<any>(null)
 // 用户登录状态
 const loginUserStore = useLoginUserStore()
 const router = useRouter()
+const route = useRoute()
 
 // 搜索表单
 const searchForm = reactive({
@@ -347,6 +349,19 @@ const fetchUserSpaceInfo = async () => {
   if (!loginUserStore.loginUser.id) return
 
   try {
+    // 检查URL参数中是否有spaceId
+    const urlSpaceId = route.query.spaceId as string
+    if (urlSpaceId) {
+      // 如果URL中有spaceId，直接使用
+      currentSpaceId.value = urlSpaceId
+      // 这里可以调用接口获取空间详情，或者直接使用URL中的ID
+      // 暂时使用默认值，实际项目中可能需要调用空间详情接口
+      maxSpaceSize.value = 10 * 1024 * 1024 * 1024 // 默认10GB
+      spaceTotalSize.value = 0
+      return
+    }
+
+    // 如果没有URL参数，则获取用户的第一个空间
     const resp = await listSpaceVoByPageUsingPost({
       current: 1,
       pageSize: 1,
@@ -497,6 +512,11 @@ const goToCreateSpace = () => {
   router.push('/space/add')
 }
 
+// 跳转到我加入的空间
+const showJoinedSpaces = () => {
+  router.push('/joined-spaces')
+}
+
 // 工具函数
 const formatFileSize = (bytes: number): string => {
   if (!bytes && bytes !== 0) return '0 B'
@@ -520,6 +540,15 @@ onMounted(() => {
   // 先获取空间信息，再拉取图片
   fetchUserSpaceInfo().then(() => fetchPictureList())
 })
+
+// 监听路由参数变化
+watch(() => route.query.spaceId, (newSpaceId) => {
+  if (newSpaceId && newSpaceId !== currentSpaceId.value) {
+    currentSpaceId.value = newSpaceId as string
+    // 重新获取图片列表
+    fetchPictureList()
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -666,6 +695,19 @@ onMounted(() => {
   box-shadow: 0 10px 20px rgba(16,185,129,0.25);
 }
 .create-space-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(16,185,129,0.35); }
+
+.joined-spaces-btn {
+  margin-left: 1rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.25);
+}
+.joined-spaces-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(102, 126, 234, 0.35); }
 
 /* 搜索区域 */
 .search-section {

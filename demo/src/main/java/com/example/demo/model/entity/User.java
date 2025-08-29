@@ -24,6 +24,10 @@ public class User {
     @TableField("userAvatar")
     private String userAvatar;
 
+
+    @TableField("password ")
+    private String password ;
+
     @TableField("userProfile")
     private String userProfile;
 

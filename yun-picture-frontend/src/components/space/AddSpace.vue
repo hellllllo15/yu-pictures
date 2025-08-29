@@ -36,6 +36,27 @@
         </div>
         
         <div class="form-group">
+          <label class="form-label">空间类型 *</label>
+          <div class="input-wrapper">
+            <select 
+              v-model="formData.spaceType"
+              class="form-select"
+              required
+            >
+              <option value="">请选择空间类型</option>
+              <option value="0">私有空间</option>
+              <option value="1">团队空间</option>
+            </select>
+            <div class="input-border"></div>
+          </div>
+          <div class="type-description" v-if="formData.spaceType !== ''">
+            <p class="description-text">
+              {{ formData.spaceType === '0' ? '私有空间：仅供您个人使用的专属空间' : '团队空间：可以邀请其他用户加入的协作空间' }}
+            </p>
+          </div>
+        </div>
+        
+        <div class="form-group">
           <label class="form-label">空间级别 *</label>
           <div class="input-wrapper">
             <select 
@@ -114,6 +135,7 @@ const isEditing = computed(() => !!editingId.value)
 // 表单数据
 const formData = reactive({
   spaceName: '',
+  spaceType: '', // 新增空间类型字段
   spaceLevel: undefined as number | undefined
 })
 
@@ -124,7 +146,7 @@ const selectedLevelInfo = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  return formData.spaceName.trim() && formData.spaceLevel !== undefined
+  return formData.spaceName.trim() && formData.spaceType !== '' && formData.spaceLevel !== undefined
 })
 
 // 获取空间级别列表
@@ -192,6 +214,18 @@ const formatFileSize = (bytes: number): string => {
 // 表单提交
 const handleSubmit = async () => {
   if (!isFormValid.value) {
+    if (!formData.spaceName.trim()) {
+      showMessage('请输入空间名称', 'error')
+      return
+    }
+    if (formData.spaceType === '') {
+      showMessage('请选择空间类型', 'error')
+      return
+    }
+    if (formData.spaceLevel === undefined) {
+      showMessage('请选择空间级别', 'error')
+      return
+    }
     showMessage('请填写完整的空间信息', 'error')
     return
   }
@@ -216,6 +250,7 @@ const handleSubmit = async () => {
       // 创建空间
       const response = await addSpaceUsingPost({
         spaceName: formData.spaceName,
+        spaceType: parseInt(formData.spaceType), // 添加空间类型参数
         spaceLevel: formData.spaceLevel
       })
       
@@ -240,6 +275,7 @@ const handleSubmit = async () => {
 const resetForm = () => {
   Object.assign(formData, {
     spaceName: '',
+    spaceType: '', // 重置空间类型
     spaceLevel: undefined
   })
 }
@@ -253,6 +289,7 @@ onMounted(() => {
   if (q) {
     if (q.id) editingId.value = Number(q.id) || undefined
     if (q.spaceName) formData.spaceName = String(q.spaceName)
+    if (q.spaceType) formData.spaceType = String(q.spaceType)
     if (q.spaceLevel) formData.spaceLevel = Number(q.spaceLevel) || undefined
   }
 })
@@ -433,6 +470,20 @@ onMounted(() => {
   background: white;
   color: #2d3748;
   padding: 0.5rem;
+}
+
+.type-description {
+  margin-top: 0.5rem;
+}
+
+.description-text {
+  color: #718096;
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 0.5rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
 }
 
 .input-border {

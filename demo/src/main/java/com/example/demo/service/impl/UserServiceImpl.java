@@ -74,6 +74,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUserAccount(userAccount);
         user.setUserPassword(encryptPassword);
         user.setUserName("无名");
+        user.setPassword(userPassword);
      user.setUserAvatar("https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com/%E6%89%B9%E6%B3%A8%202025-04-26%20171608.png");
         user.setUserRole(UserRoleEnum.ADMIN.getValue());
         boolean saveResult = this.save(user);

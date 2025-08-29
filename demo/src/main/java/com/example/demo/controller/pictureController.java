@@ -226,15 +226,17 @@ public class pictureController {
             }
 
             //需要让用户能够查到自己所有的图片，所以要把空间ID的限制去掉
-            pictureQueryRequest.setSpaceId(null);
+           // pictureQueryRequest.setSpaceId(null);
         }
 
 
 
-
+        QueryWrapper<Picture>  pictureQueryWrapper=    pictureService.getQueryWrapper(pictureQueryRequest);
 // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
-                pictureService.getQueryWrapper(pictureQueryRequest));
+                pictureQueryWrapper);
+
+
 
         // 获取封装返回结果
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage,request));
@@ -293,16 +295,9 @@ public class pictureController {
             //如果不是上传到公共空间，就携带空间ID
             if(!IsPublic){
 
-                //如果空间ID为空，说明用户需要新建空间
+                //如果空间ID为空，报错
                 if(spaceId==null){
-
-
-                    SpaceAddRequest spaceAddRequest=new SpaceAddRequest();
-                    spaceAddRequest.setSpaceName("默认空间");
-                    spaceAddRequest.setSpaceLevel(0);
-
-                    spaceId = spaceService.addSpace(spaceAddRequest, loginUser);
-                    pictureUpdateRequest.setSpaceId(spaceId);
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数错误");
 
                 }
 
@@ -386,16 +381,9 @@ public class pictureController {
             //如果不是上传到公共空间，就携带空间ID
             if(!IsPublic){
 
-                //如果空间ID为空，说明用户需要新建空间
+                //如果空间ID为空,报错
                 if(spaceId==null){
-
-
-                    SpaceAddRequest spaceAddRequest=new SpaceAddRequest();
-                    spaceAddRequest.setSpaceName("默认空间");
-                    spaceAddRequest.setSpaceLevel(0);
-
-                    spaceId = spaceService.addSpace(spaceAddRequest, loginUser);
-                    pictureUpdateRequest.setSpaceId(spaceId);
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数错误");
 
                 }
 
