@@ -16,12 +16,20 @@
       <div class="page-header">
         <h1 class="page-title">
           <span class="title-icon">🏠</span>
-          <span class="title-text">{{ currentSpaceId && route.query.spaceId ? '团队空间' : '我的空间' }}</span>
+          <span class="title-text">{{ getPageTitle() }}</span>
           <span class="title-decoration"></span>
           <button class="create-space-btn" @click="goToCreateSpace">创建空间</button>
-          <button class="joined-spaces-btn" @click="showJoinedSpaces">我加入的空间</button>
+          <div class="button-group">
+            <button class="joined-spaces-btn" @click="showJoinedSpaces">我加入的空间</button>
+            <button v-if="canManageMembers" class="manage-members-btn" @click="manageMembers">管理空间成员</button>
+          </div>
         </h1>
-        <p class="page-subtitle">{{ currentSpaceId && route.query.spaceId ? '查看团队空间的图片' : '管理您的专属图片收藏' }}</p>
+        <p class="page-subtitle">{{ getPageSubtitle() }}</p>
+        <div v-if="route.query.spaceId && userRole" class="role-info">
+          <span class="role-badge" :class="getRoleBadgeClass()">
+            {{ getRoleText() }}
+          </span>
+        </div>
       </div>
       
       <!-- 搜索筛选区域 -->
@@ -165,9 +173,9 @@
           <!-- 空状态 -->
           <div v-else-if="pictureList.length === 0" class="empty-container">
             <div class="empty-icon">🖼️</div>
-            <h3 class="empty-title">{{ currentSpaceId && route.query.spaceId ? '该空间暂无图片' : '暂无图片' }}</h3>
-            <p class="empty-text">{{ currentSpaceId && route.query.spaceId ? '这个团队空间中还没有图片' : '您的空间中还没有图片，快去上传一些吧！' }}</p>
-            <button v-if="!route.query.spaceId" class="upload-btn" @click="goToUpload">
+            <h3 class="empty-title">{{ getEmptyTitle() }}</h3>
+            <p class="empty-text">{{ getEmptyText() }}</p>
+            <button v-if="canEdit" class="upload-btn" @click="goToUpload">
               <span class="btn-icon">📤</span>
               <span class="btn-text">上传图片</span>
             </button>
@@ -185,10 +193,10 @@
                 <img :src="picture.url" :alt="picture.name" />
                 <div class="picture-overlay">
                   <div class="overlay-actions">
-                    <button v-if="!route.query.spaceId" class="action-btn edit-btn" @click.stop="editPicture(picture)" title="编辑">
+                    <button v-if="canEdit" class="action-btn edit-btn" @click.stop="editPicture(picture)" title="编辑">
                       <span class="btn-icon">✏️</span>
                     </button>
-                    <button v-if="!route.query.spaceId" class="action-btn delete-btn" @click.stop="deletePicture(picture.id)" title="删除">
+                    <button v-if="canEdit" class="action-btn delete-btn" @click.stop="deletePicture(picture.id)" title="删除">
                       <span class="btn-icon">🗑️</span>
                     </button>
                   </div>
@@ -293,6 +301,14 @@ const userSpaceInfo = ref<any>(null)
 const loginUserStore = useLoginUserStore()
 const router = useRouter()
 const route = useRoute()
+
+// 用户角色状态
+const userRole = ref<string>('')
+const isViewer = computed(() => userRole.value === 'viewer')
+const isEditor = computed(() => userRole.value === 'editor')
+const isAdmin = computed(() => userRole.value === 'admin')
+const canEdit = computed(() => isEditor.value || isAdmin.value)
+const canManageMembers = computed(() => isAdmin.value)
 
 // 搜索表单
 const searchForm = reactive({
@@ -447,6 +463,10 @@ const handleSearch = () => {
 
 // 分页处理
 const changePage = (page: number) => {
+  // 边界检查：确保页码在有效范围内
+  if (page < 1 || page > totalPages.value) {
+    return
+  }
   currentPage.value = page
   fetchPictureList()
 }
@@ -517,6 +537,18 @@ const showJoinedSpaces = () => {
   router.push('/joined-spaces')
 }
 
+// 管理空间成员
+const manageMembers = () => {
+  if (currentSpaceId.value) {
+    router.push({ 
+      path: '/space/members', 
+      query: { spaceId: currentSpaceId.value } 
+    })
+  } else {
+    alert('无法跳转到成员管理页面，当前空间ID不存在')
+  }
+}
+
 // 工具函数
 const formatFileSize = (bytes: number): string => {
   if (!bytes && bytes !== 0) return '0 B'
@@ -534,11 +566,65 @@ const formatDateTime = (v: any): string => {
   return d.toLocaleString('zh-CN')
 }
 
+// 获取页面标题
+const getPageTitle = () => {
+  if (currentSpaceId.value && route.query.spaceId) {
+    return '团队空间'
+  }
+  return '我的空间'
+}
+
+// 获取页面副标题
+const getPageSubtitle = () => {
+  if (currentSpaceId.value && route.query.spaceId) {
+    return '查看团队空间的图片'
+  }
+  return '管理您的专属图片收藏'
+}
+
+// 获取空状态标题
+const getEmptyTitle = () => {
+  if (currentSpaceId.value && route.query.spaceId) {
+    return '该空间暂无图片'
+  }
+  return '暂无图片'
+}
+
+// 获取空状态文本
+const getEmptyText = () => {
+  if (currentSpaceId.value && route.query.spaceId) {
+    return '这个团队空间中还没有图片'
+  }
+  return '您的空间中还没有图片，快去上传一些吧！'
+}
+
+// 获取用户角色文本
+const getRoleText = () => {
+  if (isViewer.value) return '访客'
+  if (isEditor.value) return '编辑者'
+  if (isAdmin.value) return '管理员'
+  return '未知'
+}
+
+// 获取用户角色徽章类名
+const getRoleBadgeClass = () => {
+  if (isViewer.value) return 'viewer'
+  if (isEditor.value) return 'editor'
+  if (isAdmin.value) return 'admin'
+  return ''
+}
+
 // 组件挂载时获取数据
 onMounted(() => {
   fetchTagCategories()
   // 先获取空间信息，再拉取图片
   fetchUserSpaceInfo().then(() => fetchPictureList())
+  
+  // 读取用户角色信息
+  const urlUserRole = route.query.userRole as string
+  if (urlUserRole) {
+    userRole.value = urlUserRole
+  }
 })
 
 // 监听路由参数变化
@@ -547,6 +633,13 @@ watch(() => route.query.spaceId, (newSpaceId) => {
     currentSpaceId.value = newSpaceId as string
     // 重新获取图片列表
     fetchPictureList()
+  }
+}, { immediate: true })
+
+// 监听用户角色变化
+watch(() => route.query.userRole, (newUserRole) => {
+  if (newUserRole) {
+    userRole.value = newUserRole as string
   }
 }, { immediate: true })
 </script>
@@ -683,6 +776,39 @@ watch(() => route.query.spaceId, (newSpaceId) => {
   margin: 0;
 }
 
+.role-info {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border: 1px solid var(--border-color);
+  background: rgba(17,24,39,0.6);
+  backdrop-filter: blur(20px);
+  color: #718096;
+}
+
+.role-badge.viewer {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+}
+.role-badge.editor {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+.role-badge.admin {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color: #fff;
+}
+
 .create-space-btn {
   margin-left: auto;
   padding: 0.6rem 1rem;
@@ -708,6 +834,26 @@ watch(() => route.query.spaceId, (newSpaceId) => {
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.25);
 }
 .joined-spaces-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(102, 126, 234, 0.35); }
+
+.manage-members-btn {
+  margin-left: 1rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(66, 153, 225, 0.25);
+}
+.manage-members-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(66, 153, 225, 0.35); }
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-left: 1rem;
+  flex-wrap: wrap;
+}
 
 /* 搜索区域 */
 .search-section {
@@ -1326,6 +1472,12 @@ watch(() => route.query.spaceId, (newSpaceId) => {
   .pagination-container {
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .button-group {
+    flex-direction: column;
+    margin-left: 0;
+    margin-top: 1rem;
   }
 }
 

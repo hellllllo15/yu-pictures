@@ -66,6 +66,10 @@ public interface PictureService extends IService<Picture> {
      */
     public void fillReviewParams(Picture picture, User loginUser);
 
+    /**
+     * 自定义更新方法，确保包含spaceId以便ShardingSphere正确路由
+     */
+    boolean updatePictureWithSpaceId(Picture picture);
 
     /**
      * 批量抓取和创建图片

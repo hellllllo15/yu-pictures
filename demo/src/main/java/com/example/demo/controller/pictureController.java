@@ -134,8 +134,8 @@ public class pictureController {
 
 
 
-        // 操作数据库
-        boolean result = pictureService.updateById(picture);
+        // 操作数据库 - 使用自定义方法确保包含spaceId
+        boolean result = pictureService.updatePictureWithSpaceId(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -200,7 +200,7 @@ public class pictureController {
     }
 
     /**
-     * 分页获取图片列表（封装类）
+     * 分页获取图片列表（封装类）    前端使用了
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest , HttpServletRequest request) {
@@ -335,8 +335,12 @@ public class pictureController {
 
         //补充审核参数
         pictureService.fillReviewParams(picture,loginUser);
+
         // 操作数据库
         boolean result = pictureService.updateById(picture);
+
+//        // 操作数据库 - 使用自定义方法确保包含spaceId
+//        boolean result = pictureService.updatePictureWithSpaceId(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -426,8 +430,13 @@ public class pictureController {
 
         //补充审核参数
         pictureService.fillReviewParams(picture,loginUser);
+
+
         // 操作数据库
         boolean result = pictureService.updateById(picture);
+
+//        // 操作数据库 - 使用自定义方法确保包含spaceId
+//        boolean result = pictureService.updatePictureWithSpaceId(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }

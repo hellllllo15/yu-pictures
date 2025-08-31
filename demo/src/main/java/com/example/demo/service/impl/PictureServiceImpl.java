@@ -383,7 +383,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         BeanUtils.copyProperties(pictureReviewRequest, updatePicture);
         updatePicture.setReviewerId(loginUser.getId());
         updatePicture.setReviewTime(new Date());
-        boolean result = this.updateById(updatePicture);
+        // 使用自定义方法确保包含spaceId
+        boolean result = this.updatePictureWithSpaceId(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
     }
 
@@ -405,6 +406,31 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
     }
 
+    /**
+     * 自定义更新方法，确保包含spaceId以便ShardingSphere正确路由
+     */
+    public boolean updatePictureWithSpaceId(Picture picture) {
+        // 如果spaceId为空，从数据库中查询原图片的spaceId
+        if (picture.getSpaceId() == null) {
+            Picture oldPicture = this.getById(picture.getId());
+            if (oldPicture != null && oldPicture.getSpaceId() != null) {
+                picture.setSpaceId(oldPicture.getSpaceId());
+            }
+        }
+        
+        // 使用lambdaUpdate方法，手动指定WHERE条件包含spaceId
+        return this.lambdaUpdate()
+                .eq(Picture::getId, picture.getId())
+                .eq(Picture::getSpaceId, picture.getSpaceId())
+                .eq(Picture::getIsDelete, false)
+                .set(picture.getName() != null, Picture::getName, picture.getName())
+                .set(picture.getEditTime() != null, Picture::getEditTime, picture.getEditTime())
+                .set(picture.getReviewStatus() != null, Picture::getReviewStatus, picture.getReviewStatus())
+                .set(picture.getReviewMessage() != null, Picture::getReviewMessage, picture.getReviewMessage())
+                .set(picture.getReviewerId() != null, Picture::getReviewerId, picture.getReviewerId())
+                .set(picture.getReviewTime() != null, Picture::getReviewTime, picture.getReviewTime())
+                .update();
+    }
 
 
     /**
@@ -555,8 +581,8 @@ public void checkPictureAuth(User loginUser, Picture picture) {
         checkPictureAuth(loginUser, oldPicture);
         // 补充审核参数
         this.fillReviewParams(picture, loginUser);
-        // 操作数据库
-        boolean result = this.updateById(picture);
+        // 操作数据库 - 使用自定义方法确保包含spaceId
+        boolean result = this.updatePictureWithSpaceId(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
     }
 

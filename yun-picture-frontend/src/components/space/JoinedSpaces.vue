@@ -123,11 +123,15 @@ const fetchJoinedSpaces = async () => {
 
 // 查看空间图片
 const viewSpacePictures = (space: any) => {
-  // 跳转到我的空间页面，并传递空间ID参数
+  // 跳转到我的空间页面，并传递空间ID参数和用户角色
   const spaceId = space.spaceId || space.space?.id
+  const userRole = space.spaceRole // 用户在该空间中的角色
   router.push({
     path: '/space/my',
-    query: { spaceId: spaceId }
+    query: { 
+      spaceId: spaceId,
+      userRole: userRole // 传递用户角色
+    }
   })
 }
 

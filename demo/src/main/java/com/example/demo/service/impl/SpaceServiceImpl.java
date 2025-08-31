@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.exception.ThrowUtils;
-import com.example.demo.manager.sharding.DynamicShardingManager;
+//import com.example.demo.manager.sharding.DynamicShardingManager;
 import com.example.demo.mapper.PictureMapper;
 import com.example.demo.mapper.SpaceMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -53,9 +53,11 @@ public class SpaceServiceImpl  extends ServiceImpl<SpaceMapper, Space> implement
     @Resource
     private SpaceUserService spaceUserService;
 
-    @Resource
-    @Lazy
-    private DynamicShardingManager dynamicShardingManager;
+
+    ///分库分表
+//    @Resource
+//    @Lazy
+//    private DynamicShardingManager dynamicShardingManager;
 
     //判断是更新还是创建空间
     @Override
@@ -190,8 +192,10 @@ public class SpaceServiceImpl  extends ServiceImpl<SpaceMapper, Space> implement
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
 
+
+                ///分库分表
                  // 创建分表
-                dynamicShardingManager.createSpacePictureTable(space);
+               /// dynamicShardingManager.createSpacePictureTable(space);
                 // 返回新写入的数据 id
                 return space.getId();
             });

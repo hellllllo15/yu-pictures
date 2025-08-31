@@ -3,17 +3,18 @@ import HomePage from '../components/HomePage.vue'
 import UserLogin from '../pages/user/UserLogin.vue'
 import UserRegister from '../pages/user/UserRegister.vue'
 import UserAuth from '../pages/user/UserAuth.vue'
-import UserManage from '../pages/admin/UserManage.vue'
-import AddPicture from '../components/picture/AddPicture.vue'
-import BackGround from '../pages/background/BackGround.vue'
-import PictureManage from '../pages/admin/PictureManage.vue'
-import SpaceManage from '../pages/admin/SpaceManage.vue'
-import AddSpace from '../components/space/AddSpace.vue'
 import MySpace from '../components/space/MySpace.vue'
+import AddSpace from '../components/space/AddSpace.vue'
 import JoinedSpaces from '../components/space/JoinedSpaces.vue'
+import SpaceMembers from '../components/space/SpaceMembers.vue'
+import AddPicture from '../components/picture/AddPicture.vue'
 import CrawlPictures from '../components/picture/CrawlPictures.vue'
 import CrawlByUrl from '../components/picture/CrawlByUrl.vue'
+import PictureManage from '../pages/admin/PictureManage.vue'
+import SpaceManage from '../pages/admin/SpaceManage.vue'
+import UserManage from '../pages/admin/UserManage.vue'
 import SpaceAnalyzePage from '../pages/analyze/SpaceAnalyzePage.vue'
+import BackGround from '../pages/background/BackGround.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -67,6 +68,11 @@ const router = createRouter({
       path: '/joined-spaces',
       name: '我加入的空间',
       component: JoinedSpaces,
+    },
+    {
+      path: '/space/members',
+      name: '空间成员',
+      component: SpaceMembers,
     },
     {
       path: '/picture/upload',

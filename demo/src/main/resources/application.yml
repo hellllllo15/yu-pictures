@@ -14,33 +14,43 @@ spring:
     multipart:
       max-file-size: 10MB
 
-  # 空间图片分表 - 使用ShardingSphere管理数据源
-  shardingsphere:
-      datasource:
-        names: yun_pictures_1
-        yun_pictures_1:
-          type: com.zaxxer.hikari.HikariDataSource
-          driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://localhost:3306/yun-pictures-1?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true
-          username: root
-          password: 123456
-      rules:
-        sharding:
-          tables:
-            picture:
-              actual-data-nodes: yun_pictures_1.picture  # 数据源名.表名
-              table-strategy:
-                standard:
-                  sharding-column: spaceId  # 分片字段，对应数据库表中的字段名
-                  sharding-algorithm-name: picture_sharding_algorithm
-          sharding-algorithms:
-            picture_sharding_algorithm:
-              type: CLASS_BASED
-              props:
-                strategy: standard
-                algorithmClassName: com.example.demo.manager.sharding.PictureShardingAlgorithm
-      props:
-        sql-show: true
+
+  #数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/yun-pictures-1?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true
+    username: root
+    password: 123456
+
+
+
+#  # 空间图片分表 - 使用ShardingSphere管理数据源
+#  shardingsphere:
+#      datasource:
+#        names: yun_pictures_1
+#        yun_pictures_1:
+#          type: com.zaxxer.hikari.HikariDataSource
+#          driver-class-name: com.mysql.cj.jdbc.Driver
+#          url: jdbc:mysql://localhost:3306/yun-pictures-1?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true
+#          username: root
+#          password: 123456
+#      rules:
+#        sharding:
+#          tables:
+#            picture:
+#              actual-data-nodes: yun_pictures_1.picture  # 数据源名.表名
+#              table-strategy:
+#                standard:
+#                  sharding-column: spaceId  # 分片字段，对应数据库表中的字段名
+#                  sharding-algorithm-name: picture_sharding_algorithm
+#          sharding-algorithms:
+#            picture_sharding_algorithm:
+#              type: CLASS_BASED
+#              props:
+#                strategy: standard
+#                algorithmClassName: com.example.demo.manager.sharding.PictureShardingAlgorithm
+#      props:
+#        sql-show: true
 
 
 
