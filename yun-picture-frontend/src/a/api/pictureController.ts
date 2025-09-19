@@ -38,7 +38,9 @@ export async function addPictureUsingPost(
       ...params,
     },
     data: formData,
-    requestType: 'form',
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
     ...(options || {}),
   })
 }
@@ -272,7 +274,9 @@ export async function uploadPictureUsingPost(
       ...params,
     },
     data: formData,
-    requestType: 'form',
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
     ...(options || {}),
   })
 }

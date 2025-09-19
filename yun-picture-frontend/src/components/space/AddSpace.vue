@@ -241,8 +241,8 @@ const handleSubmit = async () => {
       
       if (response.data?.code === 0) {
         showMessage('空间更新成功！', 'success')
-        // 跳转回空间管理页面
-        router.push('/admin/spaceManage')
+        // 跳转到我的空间页面
+        router.push('/space/my')
       } else {
         showMessage(response.data?.message || '更新失败', 'error')
       }

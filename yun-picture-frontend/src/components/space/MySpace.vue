@@ -10,6 +10,16 @@
       </div>
     </div>
     
+    <!-- 图片编辑组件 -->
+    <ImageEditor
+      :visible="showImageEditor"
+      :imageUrl="editingPicture?.url"
+      :picture="editingPicture"
+      :spaceId="currentSpaceId ? Number(currentSpaceId) : undefined"
+      :onSuccess="onImageEditSuccess"
+      :onClose="closeImageEditor"
+    />
+    
     <!-- 主要内容 -->
     <div class="main-content">
       <!-- 页面标题 -->
@@ -184,14 +194,47 @@
           <!-- 图片网格 -->
           <div v-else class="pictures-grid">
             <div 
-              v-for="picture in pictureList" 
+              v-for="(picture, index) in pictureList" 
               :key="picture.id" 
               class="picture-card"
+              :data-picture-id="picture.id"
               @click="viewPicture(picture)"
             >
               <div class="picture-image">
-                <img :src="picture.url" :alt="picture.name" />
-                <div class="picture-overlay">
+                <img 
+                  :src="picture.url" 
+                  :alt="picture.name" 
+                  :class="{ 'img-normal': !imageErrorStates[index] && !imageLoadingStates[index] }"
+                  @load="onImageLoad"
+                  @error="onImageError"
+                  referrerpolicy="no-referrer"
+                />
+                <!-- 加载状态指示器 -->
+                <div class="image-loading" v-if="imageLoadingStates[index]">
+                  <div class="loading-spinner-small"></div>
+                </div>
+                <!-- 错误状态指示器 -->
+                <div class="image-error" v-if="imageErrorStates[index]">
+                  <div class="error-icon">⚠️</div>
+                  <div class="error-text">加载失败</div>
+                  <button @click.stop="retryLoadImage(index)" class="retry-btn">重试</button>
+                </div>
+                <!-- 审核状态覆盖层 -->
+                <div v-if="picture.reviewStatus !== 1" class="review-status-overlay">
+                  <div class="review-status-content">
+                    <div class="review-status-icon">
+                      <span v-if="picture.reviewStatus === 0">⏳</span>
+                      <span v-else-if="picture.reviewStatus === 2">❌</span>
+                    </div>
+                    <div class="review-status-text">
+                      <span v-if="picture.reviewStatus === 0">待审核</span>
+                      <span v-else-if="picture.reviewStatus === 2">审核未通过</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 操作按钮覆盖层（仅审核通过时显示） -->
+                <div v-if="picture.reviewStatus === 1" class="picture-overlay">
                   <div class="overlay-actions">
                     <button v-if="canEdit" class="action-btn edit-btn" @click.stop="editPicture(picture)" title="编辑">
                       <span class="btn-icon">✏️</span>
@@ -230,6 +273,29 @@
                   >
                     {{ picture.spaceId ? '🔒 私密' : '🌐 公开' }}
                   </span>
+                </div>
+                
+                <!-- 审核状态显示（仅显示待审核和审核未通过） -->
+                <div class="review-status-badge" v-if="picture.reviewStatus !== 1">
+                  <span 
+                    :class="['status-badge', getReviewStatusClass(picture.reviewStatus)]"
+                  >
+                    <span class="status-icon">
+                      <span v-if="picture.reviewStatus === 0">⏳</span>
+                      <span v-else-if="picture.reviewStatus === 2">❌</span>
+                    </span>
+                    <span class="status-text">
+                      <span v-if="picture.reviewStatus === 0">待审核</span>
+                      <span v-else-if="picture.reviewStatus === 2">审核未通过</span>
+                    </span>
+                  </span>
+                </div>
+                <!-- 复制图片地址按钮 -->
+                <div class="copy-url-section">
+                  <button class="copy-url-btn" @click="copyImageUrl(picture.url)" title="复制图片地址">
+                    <span class="copy-icon">📋</span>
+                    <span class="copy-text">复制图片地址</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -281,6 +347,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { listPictureVoByPageUsingPost, listPictureTagCategoryUsingGet, deletePictureUsingPost } from '../../a/api/pictureController'
 import { listSpaceVoByPageUsingPost } from '../../a/api/spaceController'
 import { useLoginUserStore } from '../../stores/useLoginUserStore'
+import ImageEditor from '../picture/ImageEditor.vue'
 
 // 状态管理
 const isLoading = ref(false)
@@ -291,6 +358,11 @@ const currentPage = ref(1)
 const pageSize = ref(12)
 const totalPictures = ref(0)
 const totalPages = ref(0)
+
+// 图片加载状态管理（参考爬取图片页面的逻辑）
+const imageLoadingStates = ref<boolean[]>([])
+const imageErrorStates = ref<boolean[]>([])
+const imageLoadStrategies = ref<Map<number, number>>(new Map()) // 记录每个图片的当前策略索引
 // 空间用量与容量（来自空间分页返回值）
 const spaceTotalSize = ref(0)
 const maxSpaceSize = ref(10 * 1024 * 1024 * 1024) // 默认10GB，占位，实际从接口赋值
@@ -309,6 +381,10 @@ const isEditor = computed(() => userRole.value === 'editor')
 const isAdmin = computed(() => userRole.value === 'admin')
 const canEdit = computed(() => isEditor.value || isAdmin.value)
 const canManageMembers = computed(() => isAdmin.value)
+
+// 图片编辑状态
+const showImageEditor = ref(false)
+const editingPicture = ref<any>(null)
 
 // 搜索表单
 const searchForm = reactive({
@@ -415,6 +491,78 @@ const fetchTagCategories = async () => {
   }
 }
 
+// 定义加载策略（参考爬取图片页面的逻辑）
+const loadStrategies = [
+  { name: '原始URL', url: (originalUrl: string) => originalUrl, attrs: {} },
+  { name: '清理后URL', url: (originalUrl: string) => getCleanImageUrl(originalUrl), attrs: {} },
+  { name: '添加crossorigin', url: (originalUrl: string) => getCleanImageUrl(originalUrl), attrs: { crossorigin: 'anonymous' } },
+  { name: '添加referrerpolicy', url: (originalUrl: string) => getCleanImageUrl(originalUrl), attrs: { referrerpolicy: 'no-referrer' } },
+  { name: '两个属性都加', url: (originalUrl: string) => getCleanImageUrl(originalUrl), attrs: { crossorigin: 'anonymous', referrerpolicy: 'no-referrer' } }
+]
+
+// 获取当前策略
+const getCurrentStrategy = (idx: number) => {
+  const strategyIndex = imageLoadStrategies.value.get(idx) || 0
+  return loadStrategies[strategyIndex]
+}
+
+// 应用策略到图片元素
+const applyStrategyToImage = (img: HTMLImageElement, strategy: any, originalUrl: string) => {
+  // 设置src
+  img.src = strategy.url(originalUrl)
+  
+  // 设置属性
+  if (strategy.attrs.crossorigin) {
+    img.setAttribute('crossorigin', strategy.attrs.crossorigin)
+  } else {
+    img.removeAttribute('crossorigin')
+  }
+  
+  if (strategy.attrs.referrerpolicy) {
+    img.setAttribute('referrerpolicy', strategy.attrs.referrerpolicy)
+  } else {
+    img.removeAttribute('referrerpolicy')
+  }
+  
+  console.log(`应用策略 [${strategy.name}] 到图片 ${img.alt}: ${strategy.url(originalUrl)}`)
+}
+
+// URL清理函数（参考爬取图片页面的逻辑）
+const getCleanImageUrl = (url: string) => {
+  if (!url) return url
+  
+  try {
+    let cleanedUrl = url
+    
+    // 如果URL包含@符号，截取@之前的部分
+    if (url.includes('@')) {
+      cleanedUrl = url.split('@')[0]
+      console.log(`URL清理(@): ${url} → ${cleanedUrl}`)
+    }
+    
+    // 如果URL包含查询参数（?），截取?之前的部分
+    if (url.includes('?')) {
+      cleanedUrl = url.split('?')[0]
+      console.log(`URL清理(?): ${url} → ${cleanedUrl}`)
+    }
+    
+    // 如果URL包含#，截取#之前的部分
+    if (url.includes('#')) {
+      cleanedUrl = url.split('#')[0]
+      console.log(`URL清理(#): ${url} → ${cleanedUrl}`)
+    }
+    
+    if (cleanedUrl !== url) {
+      console.log(`最终清理结果: ${url} → ${cleanedUrl}`)
+    }
+    
+    return cleanedUrl
+  } catch (error) {
+    console.warn('URL清理失败:', error)
+    return url
+  }
+}
+
 // 获取图片列表（限定空间ID）
 const fetchPictureList = async () => {
   isLoading.value = true
@@ -444,9 +592,26 @@ const fetchPictureList = async () => {
     
     if (response.data?.code === 0 && response.data.data) {
       const pageData = response.data.data
-      pictureList.value = pageData.records || []
+      const images = pageData.records || []
+      
+      // 为每个图片添加loaded状态
+      images.forEach((image: any) => {
+        image.loaded = false
+      })
+      
+      pictureList.value = images
       totalPictures.value = pageData.total || 0
       totalPages.value = pageData.pages || 0
+      
+      // 初始化图片状态（参考爬取图片页面的逻辑）
+      imageLoadingStates.value = new Array(images.length).fill(true)
+      imageErrorStates.value = new Array(images.length).fill(false)
+      
+      // 重置所有图片的策略索引
+      imageLoadStrategies.value.clear()
+      images.forEach((_, idx) => {
+        imageLoadStrategies.value.set(idx, 0)
+      })
     }
   } catch (error) {
     console.error('获取图片列表失败:', error)
@@ -481,26 +646,15 @@ const viewPicture = (picture: any) => {
 const editPicture = (picture: any) => {
   try {
     console.log('编辑图片:', picture) // 调试日志
+    console.log('图片URL:', picture?.url) // 调试图片URL
     
-    // 参考图片管理页面的实现，确保传递所有必要字段
-    const query: any = {
-      id: picture.id,
-      name: picture.name,
-      introduction: picture.introduction || '',
-      category: picture.category || '',
-      tags: Array.isArray(picture.tags) ? JSON.stringify(picture.tags) : (picture.tags || '[]'),
-      url: picture.url || ''
-    }
-    
-    console.log('跳转参数:', query) // 调试日志
-    
-    router.push({ 
-      path: '/picture/upload', 
-      query 
-    })
+    // 设置正在编辑的图片
+    editingPicture.value = picture
+    // 显示图片编辑器
+    showImageEditor.value = true
   } catch (e) {
-    console.error('跳转编辑失败', e)
-    alert('跳转编辑失败，请重试')
+    console.error('打开编辑失败', e)
+    alert('打开编辑失败，请重试')
   }
 }
 
@@ -524,7 +678,17 @@ const deletePicture = async (pictureId: number) => {
 
 // 跳转到上传页面
 const goToUpload = () => {
-  router.push('/picture/upload')
+  // 如果当前在查看特定空间，传递空间ID参数
+  if (currentSpaceId.value && route.query.spaceId) {
+    console.log('跳转上传页面，传递空间ID:', currentSpaceId.value)
+    router.push({
+      path: '/picture/upload',
+      query: { spaceId: currentSpaceId.value }
+    })
+  } else {
+    console.log('跳转上传页面，无空间ID参数')
+    router.push('/picture/upload')
+  }
 }
 
 // 跳转到创建空间
@@ -539,14 +703,29 @@ const showJoinedSpaces = () => {
 
 // 管理空间成员
 const manageMembers = () => {
-  if (currentSpaceId.value) {
-    router.push({ 
-      path: '/space/members', 
-      query: { spaceId: currentSpaceId.value } 
-    })
-  } else {
-    alert('无法跳转到成员管理页面，当前空间ID不存在')
+  if (!currentSpaceId.value) {
+    alert('请先选择一个空间')
+    return
   }
+  router.push({
+    path: '/space/members',
+    query: { spaceId: currentSpaceId.value }
+  })
+}
+
+// 图片编辑成功回调
+const onImageEditSuccess = (updatedPicture: any) => {
+  console.log('图片编辑成功:', updatedPicture)
+  // 刷新图片列表
+  fetchPictureList()
+  // 关闭编辑器
+  closeImageEditor()
+}
+
+// 关闭图片编辑器
+const closeImageEditor = () => {
+  showImageEditor.value = false
+  editingPicture.value = null
 }
 
 // 工具函数
@@ -613,6 +792,159 @@ const getRoleBadgeClass = () => {
   if (isAdmin.value) return 'admin'
   return ''
 }
+
+// 获取审核状态样式类名
+const getReviewStatusClass = (reviewStatus: number) => {
+  if (reviewStatus === 0) return 'pending'
+  if (reviewStatus === 1) return 'approved'
+  if (reviewStatus === 2) return 'rejected'
+  return 'unknown'
+}
+
+// 图片加载完成处理（参考爬取图片页面的逻辑）
+const onImageLoad = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  const imageCard = img.closest('.picture-card')
+  if (imageCard) {
+    const pictureId = imageCard.getAttribute('data-picture-id')
+    if (pictureId) {
+      const imageIndex = pictureList.value.findIndex(pic => pic.id == pictureId)
+      if (imageIndex !== -1) {
+        const currentStrategyIndex = imageLoadStrategies.value.get(imageIndex) || 0
+        const currentStrategy = loadStrategies[currentStrategyIndex]
+        
+        console.log(`图片加载成功 [${imageIndex}]: 策略=${currentStrategy.name}`)
+        
+        imageLoadingStates.value[imageIndex] = false
+        imageErrorStates.value[imageIndex] = false
+        
+        const image = pictureList.value[imageIndex]
+        if (image) {
+          image.loaded = true
+          // 添加loaded类到图片元素
+          img.classList.add('loaded')
+        }
+      }
+    }
+  }
+}
+
+// 图片加载失败处理（参考爬取图片页面的逻辑）
+const onImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  const imageCard = img.closest('.picture-card')
+  if (imageCard) {
+    const pictureId = imageCard.getAttribute('data-picture-id')
+    if (pictureId) {
+      const imageIndex = pictureList.value.findIndex(pic => pic.id == pictureId)
+      if (imageIndex !== -1) {
+        const originalUrl = pictureList.value[imageIndex].url
+        const currentStrategyIndex = imageLoadStrategies.value.get(imageIndex) || 0
+        
+        console.warn(`图片加载失败 [${imageIndex}]: 当前策略=${loadStrategies[currentStrategyIndex].name}, URL=${img.src}`)
+        
+        // 如果还有更多策略可以尝试
+        if (currentStrategyIndex < loadStrategies.length - 1) {
+          const nextStrategyIndex = currentStrategyIndex + 1
+          const nextStrategy = loadStrategies[nextStrategyIndex]
+          
+          // 更新策略索引
+          imageLoadStrategies.value.set(imageIndex, nextStrategyIndex)
+          
+          // 重置加载状态，给下一个策略一次机会
+          imageLoadingStates.value[imageIndex] = true
+          imageErrorStates.value[imageIndex] = false
+          
+          // 应用下一个策略
+          applyStrategyToImage(img, nextStrategy, originalUrl)
+          return
+        }
+        
+        // 如果所有策略都尝试过了，标记为最终失败
+        console.error(`图片 [${imageIndex}] 所有策略都尝试失败: ${originalUrl}`)
+        imageErrorStates.value[imageIndex] = true
+        imageLoadingStates.value[imageIndex] = false
+      }
+    }
+  }
+}
+
+// 重试加载图片
+const retryLoadImage = (imageIndex: number) => {
+  // 重置策略索引，从头开始
+  imageLoadStrategies.value.set(imageIndex, 0)
+  
+  imageErrorStates.value[imageIndex] = false
+  imageLoadingStates.value[imageIndex] = true
+  
+  const image = pictureList.value[imageIndex]
+  if (image) {
+    const img = document.querySelector(`[data-picture-id="${image.id}"] img`) as HTMLImageElement
+    if (img) {
+      // 重试时，从第一个策略开始
+      const firstStrategy = loadStrategies[0]
+      applyStrategyToImage(img, firstStrategy, image.url)
+    }
+  }
+}
+
+// 复制图片地址
+const copyImageUrl = async (url: string) => {
+  try {
+    await navigator.clipboard.writeText(url)
+    showMessage('图片地址已复制到剪贴板', 'success')
+  } catch (error) {
+    console.error('复制失败:', error)
+    // 降级方案：使用传统方法复制
+    const textArea = document.createElement('textarea')
+    textArea.value = url
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    showMessage('图片地址已复制到剪贴板', 'success')
+  }
+}
+
+// 显示消息提示
+const showMessage = (message: string, type: 'success' | 'error' = 'success') => {
+  const messageDiv = document.createElement('div')
+  messageDiv.textContent = message
+  messageDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 9999;
+    background: ${type === 'success' ? '#10b981' : '#ef4444'};
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+  `
+  
+  document.body.appendChild(messageDiv)
+  
+  setTimeout(() => {
+    messageDiv.style.animation = 'slideOut 0.3s ease'
+    setTimeout(() => document.body.removeChild(messageDiv), 300)
+  }, 3000)
+}
+
+// 添加CSS动画
+const style = document.createElement('style')
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+`
+document.head.appendChild(style)
 
 // 组件挂载时获取数据
 onMounted(() => {
@@ -1221,6 +1553,80 @@ watch(() => route.query.userRole, (newUserRole) => {
   transition: transform 0.3s ease;
 }
 
+/* 图片加载状态样式 */
+.image-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  z-index: 10;
+}
+
+.loading-spinner-small {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* 错误状态样式 */
+.image-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  z-index: 10;
+}
+
+.error-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-text {
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.retry-btn {
+  padding: 0.3rem 0.8rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.retry-btn:hover {
+  background: #5a67d8;
+}
+
+.img-normal {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .picture-card:hover .picture-image img {
   transform: scale(1.05);
 }
@@ -1510,5 +1916,121 @@ watch(() => route.query.userRole, (newUserRole) => {
   .picture-card {
     margin: 0 0.5rem;
   }
+}
+
+/* 复制图片地址按钮样式 */
+.copy-url-section {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.copy-url-btn {
+  background: rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.copy-url-btn:hover {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: rgba(102, 126, 234, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.copy-icon {
+  font-size: 1rem;
+}
+
+.copy-text {
+  font-size: 0.85rem;
+}
+
+/* 审核状态覆盖层样式 */
+.review-status-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+}
+
+.review-status-content {
+  text-align: center;
+  color: white;
+}
+
+.review-status-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.review-status-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* 审核状态徽章样式 */
+.review-status-badge {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.status-badge.pending {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+}
+
+.status-badge.approved {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+}
+
+.status-badge.rejected {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+}
+
+.status-badge.unknown {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: #fff;
+}
+
+.status-icon {
+  font-size: 0.9rem;
+}
+
+.status-text {
+  font-size: 0.8rem;
 }
 </style>

@@ -48,7 +48,9 @@ export async function testUploadFileUsingPost(
   return request<API.BaseResponseString_>('/api/test/upload', {
     method: 'POST',
     data: formData,
-    requestType: 'form',
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
     ...(options || {}),
   })
 }

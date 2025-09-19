@@ -22,13 +22,19 @@
         <!-- 中间导航菜单 -->
         <nav class="nav-menu">
           <RouterLink to="/" class="nav-item" active-class="active">首页</RouterLink>
-          <RouterLink to="/admin/userManage" class="nav-item" active-class="active">用户管理</RouterLink>
-          <RouterLink to="/admin/pictureManage" class="nav-item" active-class="active">图片管理</RouterLink>
-          <RouterLink to="/admin/spaceManage" class="nav-item" active-class="active">空间管理</RouterLink>
           <RouterLink to="/space/my" class="nav-item" active-class="active">我的空间</RouterLink>
           <RouterLink to="/picture/upload" class="nav-item" active-class="active">上传图片</RouterLink>
           <RouterLink to="/picture/crawl" class="nav-item" active-class="active">抓取图片</RouterLink>
           <RouterLink to="/background" class="nav-item" active-class="active">切换背景</RouterLink>
+          <RouterLink to="/test/websocket" class="nav-item" active-class="active">WebSocket测试</RouterLink>
+          
+          <!-- 管理员专用导航 -->
+          <template v-if="isAdmin">
+            <RouterLink to="/admin/userManage" class="nav-item admin-nav" active-class="active">用户管理</RouterLink>
+            <RouterLink to="/admin/pictureManage" class="nav-item admin-nav" active-class="active">图片管理</RouterLink>
+            <RouterLink to="/admin/spaceManage" class="nav-item admin-nav" active-class="active">空间管理</RouterLink>
+            <RouterLink to="/analyze/space" class="nav-item admin-nav" active-class="active">空间分析</RouterLink>
+          </template>
         </nav>
 
         <!-- 右侧用户区域 -->
@@ -199,6 +205,11 @@ const showUserDropdown = ref(false)
 // 登录状态
 const isLoggedIn = ref(false)
 
+// 计算属性：检查是否为管理员
+const isAdmin = computed(() => {
+  return userInfo.value?.userRole === 'admin'
+})
+
 // 关闭用户下拉菜单
 const closeUserDropdown = () => {
   showUserDropdown.value = false
@@ -297,10 +308,18 @@ const handleLogout = async () => {
 
 // 监听路由变化，检查登录状态
 watch(() => route.path, (newPath) => {
-  // 只在访问需要登录的页面时检查，避免重复检查
-  if (newPath.startsWith('/admin/') && !isLoggedIn.value) {
-    if (!checkLoginStatus()) {
-      router.push('/user/UserAuth')
+  // 检查管理员页面访问权限
+  if (newPath.startsWith('/admin/') || newPath.startsWith('/analyze/')) {
+    if (!isLoggedIn.value) {
+      if (!checkLoginStatus()) {
+        router.push('/user/UserAuth')
+        return
+      }
+    }
+    // 检查是否为管理员
+    if (!isAdmin.value) {
+      router.push('/')
+      return
     }
   }
 }, { immediate: false }) // 改为 false，避免初始化时重复检查
@@ -449,6 +468,29 @@ export default {
 .nav-item:hover::after,
 .nav-item.active::after {
   width: 80%;
+}
+
+/* 管理员导航按钮样式 */
+.admin-nav {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.admin-nav:hover {
+  background: linear-gradient(135deg, #5a67d8, #6b46c1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.admin-nav.active {
+  background: linear-gradient(135deg, #4c51bf, #553c9a);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.admin-nav::after {
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .user-section {

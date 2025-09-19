@@ -105,11 +105,11 @@
         
         <div class="modal-body">
           <div class="form-group">
-            <label class="form-label">用户账号</label>
+            <label class="form-label">用户ID</label>
             <input 
-              v-model="addMemberForm.userAccount" 
+              v-model="addMemberForm.userId" 
               type="text" 
-              placeholder="请输入用户账号"
+              placeholder="请输入用户ID"
               class="form-input"
             />
           </div>
@@ -209,7 +209,7 @@ const updatingMember = ref(false)
 
 // 表单数据
 const addMemberForm = ref({
-  userAccount: '',
+  userId: '',
   spaceRole: 'viewer'
 })
 
@@ -258,8 +258,8 @@ const fetchMembers = async () => {
 
 // 添加成员
 const addMember = async () => {
-  if (!addMemberForm.value.userAccount.trim()) {
-    message.error('请输入用户账号')
+  if (!addMemberForm.value.userId) {
+    message.error('请输入用户ID')
     return
   }
 
@@ -271,15 +271,15 @@ const addMember = async () => {
   addingMember.value = true
   try {
     const response = await addSpaceUserUsingPost({
-      spaceId: Number(route.query.spaceId),
+      spaceId: String(route.query.spaceId) as any, // 使用字符串避免精度丢失
       spaceRole: addMemberForm.value.spaceRole,
-      userId: undefined // 后端会根据userAccount查找用户
+      userId: String(addMemberForm.value.userId) as any // 使用字符串避免精度丢失
     })
     
     if (response.data?.code === 0) {
       message.success('添加成员成功')
       showAddMemberModal.value = false
-      addMemberForm.value = { userAccount: '', spaceRole: 'viewer' }
+      addMemberForm.value = { userId: '', spaceRole: 'viewer' }
       await fetchMembers()
     } else {
       message.error(response.data?.message || '添加成员失败')

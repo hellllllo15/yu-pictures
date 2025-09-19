@@ -1,0 +1,235 @@
+编辑图片: Proxy(Object) {id: '1968619312010768386', url: 'https://joy-yyds-1369159021.cos.ap-chengdu.myqclou…61322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png', name: '测试', spaceId: '1961322787534569473', introduction: '', …}
+MySpace.vue:649 图片URL: https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com//space/1961322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png
+MySpace.vue:652 [Vue warn]: Property "_self" was accessed during render but is not defined on instance. 
+  at <VueCropper ref="cropperRef" img="https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com//space/1961322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png" output-type="png"  ... > 
+  at <ImageEditor visible=true imageUrl="https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com//space/1961322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png" picture= {id: '1968619312010768386', url: 'https://joy-yyds-1369159021.cos.ap-chengdu.myqclou…61322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png', name: '测试', spaceId: '1961322787534569473', introduction: '', …}  ... > 
+  at <MySpace onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) {__v_skip: true} > > 
+  at <RouterView > 
+  at <BasicLayout > 
+  at <App>
+warn$1 @ chunk-FIAHBV72.js?v=16641ad8:2142
+get @ chunk-FIAHBV72.js?v=16641ad8:5261
+t2 @ vue-cropper.js?t=1758249091861&v=16641ad8:2639
+renderComponentRoot @ chunk-FIAHBV72.js?v=16641ad8:8671
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7463
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+setupRenderEffect @ chunk-FIAHBV72.js?v=16641ad8:7598
+mountComponent @ chunk-FIAHBV72.js?v=16641ad8:7372
+processComponent @ chunk-FIAHBV72.js?v=16641ad8:7324
+patch @ chunk-FIAHBV72.js?v=16641ad8:6838
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7550
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+updateComponent @ chunk-FIAHBV72.js?v=16641ad8:7401
+processComponent @ chunk-FIAHBV72.js?v=16641ad8:7335
+patch @ chunk-FIAHBV72.js?v=16641ad8:6838
+patchBlockChildren @ chunk-FIAHBV72.js?v=16641ad8:7194
+patchElement @ chunk-FIAHBV72.js?v=16641ad8:7112
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6971
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7550
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+runIfDirty @ chunk-FIAHBV72.js?v=16641ad8:543
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2289
+flushJobs @ chunk-FIAHBV72.js?v=16641ad8:2497
+Promise.then
+queueFlush @ chunk-FIAHBV72.js?v=16641ad8:2411
+queueJob @ chunk-FIAHBV72.js?v=16641ad8:2406
+effect2.scheduler @ chunk-FIAHBV72.js?v=16641ad8:7592
+trigger @ chunk-FIAHBV72.js?v=16641ad8:533
+endBatch @ chunk-FIAHBV72.js?v=16641ad8:591
+notify @ chunk-FIAHBV72.js?v=16641ad8:853
+trigger @ chunk-FIAHBV72.js?v=16641ad8:827
+set value @ chunk-FIAHBV72.js?v=16641ad8:1699
+editPicture @ MySpace.vue:652
+(anonymous) @ MySpace.vue:239
+cache.<computed>.cache.<computed> @ chunk-FIAHBV72.js?v=16641ad8:12262
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2289
+callWithAsyncErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2296
+invoker @ chunk-FIAHBV72.js?v=16641ad8:11296
+Show 56 more frames
+Show less
+MySpace.vue:652 [Vue warn]: Unhandled error during execution of render function 
+  at <VueCropper ref="cropperRef" img="https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com//space/1961322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png" output-type="png"  ... > 
+  at <ImageEditor visible=true imageUrl="https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com//space/1961322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png" picture= {id: '1968619312010768386', url: 'https://joy-yyds-1369159021.cos.ap-chengdu.myqclou…61322787534569473/2025-09-18_ofD5h6Qr4Zn2mBKV.png', name: '测试', spaceId: '1961322787534569473', introduction: '', …}  ... > 
+  at <MySpace onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) {__v_skip: true} > > 
+  at <RouterView > 
+  at <BasicLayout > 
+  at <App>
+warn$1 @ chunk-FIAHBV72.js?v=16641ad8:2142
+logError @ chunk-FIAHBV72.js?v=16641ad8:2353
+handleError @ chunk-FIAHBV72.js?v=16641ad8:2345
+renderComponentRoot @ chunk-FIAHBV72.js?v=16641ad8:8707
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7463
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+setupRenderEffect @ chunk-FIAHBV72.js?v=16641ad8:7598
+mountComponent @ chunk-FIAHBV72.js?v=16641ad8:7372
+processComponent @ chunk-FIAHBV72.js?v=16641ad8:7324
+patch @ chunk-FIAHBV72.js?v=16641ad8:6838
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7550
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+updateComponent @ chunk-FIAHBV72.js?v=16641ad8:7401
+processComponent @ chunk-FIAHBV72.js?v=16641ad8:7335
+patch @ chunk-FIAHBV72.js?v=16641ad8:6838
+patchBlockChildren @ chunk-FIAHBV72.js?v=16641ad8:7194
+patchElement @ chunk-FIAHBV72.js?v=16641ad8:7112
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6971
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7550
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+runIfDirty @ chunk-FIAHBV72.js?v=16641ad8:543
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2289
+flushJobs @ chunk-FIAHBV72.js?v=16641ad8:2497
+Promise.then
+queueFlush @ chunk-FIAHBV72.js?v=16641ad8:2411
+queueJob @ chunk-FIAHBV72.js?v=16641ad8:2406
+effect2.scheduler @ chunk-FIAHBV72.js?v=16641ad8:7592
+trigger @ chunk-FIAHBV72.js?v=16641ad8:533
+endBatch @ chunk-FIAHBV72.js?v=16641ad8:591
+notify @ chunk-FIAHBV72.js?v=16641ad8:853
+trigger @ chunk-FIAHBV72.js?v=16641ad8:827
+set value @ chunk-FIAHBV72.js?v=16641ad8:1699
+editPicture @ MySpace.vue:652
+(anonymous) @ MySpace.vue:239
+cache.<computed>.cache.<computed> @ chunk-FIAHBV72.js?v=16641ad8:12262
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2289
+callWithAsyncErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2296
+invoker @ chunk-FIAHBV72.js?v=16641ad8:11296
+Show 56 more frames
+Show less
+MySpace.vue:652 [Vue warn]: Unhandled error during execution of component update 
+  at <MySpace onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) {__v_skip: true} > > 
+  at <RouterView > 
+  at <BasicLayout > 
+  at <App>
+warn$1 @ chunk-FIAHBV72.js?v=16641ad8:2142
+logError @ chunk-FIAHBV72.js?v=16641ad8:2353
+handleError @ chunk-FIAHBV72.js?v=16641ad8:2345
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2291
+flushJobs @ chunk-FIAHBV72.js?v=16641ad8:2497
+Promise.then
+queueFlush @ chunk-FIAHBV72.js?v=16641ad8:2411
+queueJob @ chunk-FIAHBV72.js?v=16641ad8:2406
+effect2.scheduler @ chunk-FIAHBV72.js?v=16641ad8:7592
+trigger @ chunk-FIAHBV72.js?v=16641ad8:533
+endBatch @ chunk-FIAHBV72.js?v=16641ad8:591
+notify @ chunk-FIAHBV72.js?v=16641ad8:853
+trigger @ chunk-FIAHBV72.js?v=16641ad8:827
+set value @ chunk-FIAHBV72.js?v=16641ad8:1699
+editPicture @ MySpace.vue:652
+(anonymous) @ MySpace.vue:239
+cache.<computed>.cache.<computed> @ chunk-FIAHBV72.js?v=16641ad8:12262
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2289
+callWithAsyncErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2296
+invoker @ chunk-FIAHBV72.js?v=16641ad8:11296
+Show 17 more frames
+Show less
+vue-cropper.js?t=1758249091861&v=16641ad8:2639 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '_c')
+    at Proxy.t2 (vue-cropper.js?t=1758249091861&v=16641ad8:2639:40)
+    at renderComponentRoot (chunk-FIAHBV72.js?v=16641ad8:8671:17)
+    at ReactiveEffect.componentUpdateFn [as fn] (chunk-FIAHBV72.js?v=16641ad8:7463:46)
+    at ReactiveEffect.run (chunk-FIAHBV72.js?v=16641ad8:505:19)
+    at setupRenderEffect (chunk-FIAHBV72.js?v=16641ad8:7598:5)
+    at mountComponent (chunk-FIAHBV72.js?v=16641ad8:7372:7)
+    at processComponent (chunk-FIAHBV72.js?v=16641ad8:7324:9)
+    at patch (chunk-FIAHBV72.js?v=16641ad8:6838:11)
+    at mountChildren (chunk-FIAHBV72.js?v=16641ad8:7072:7)
+    at mountElement (chunk-FIAHBV72.js?v=16641ad8:6995:7)
+t2 @ vue-cropper.js?t=1758249091861&v=16641ad8:2639
+renderComponentRoot @ chunk-FIAHBV72.js?v=16641ad8:8671
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7463
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+setupRenderEffect @ chunk-FIAHBV72.js?v=16641ad8:7598
+mountComponent @ chunk-FIAHBV72.js?v=16641ad8:7372
+processComponent @ chunk-FIAHBV72.js?v=16641ad8:7324
+patch @ chunk-FIAHBV72.js?v=16641ad8:6838
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+mountChildren @ chunk-FIAHBV72.js?v=16641ad8:7072
+mountElement @ chunk-FIAHBV72.js?v=16641ad8:6995
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6960
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7550
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+updateComponent @ chunk-FIAHBV72.js?v=16641ad8:7401
+processComponent @ chunk-FIAHBV72.js?v=16641ad8:7335
+patch @ chunk-FIAHBV72.js?v=16641ad8:6838
+patchBlockChildren @ chunk-FIAHBV72.js?v=16641ad8:7194
+patchElement @ chunk-FIAHBV72.js?v=16641ad8:7112
+processElement @ chunk-FIAHBV72.js?v=16641ad8:6971
+patch @ chunk-FIAHBV72.js?v=16641ad8:6826
+componentUpdateFn @ chunk-FIAHBV72.js?v=16641ad8:7550
+run @ chunk-FIAHBV72.js?v=16641ad8:505
+runIfDirty @ chunk-FIAHBV72.js?v=16641ad8:543
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2289
+flushJobs @ chunk-FIAHBV72.js?v=16641ad8:2497
+Promise.then
+queueFlush @ chunk-FIAHBV72.js?v=16641ad8:2411
+queueJob @ chunk-FIAHBV72.js?v=16641ad8:2406
+effect2.scheduler @ chunk-FIAHBV72.js?v=16641ad8:7592
+trigger @ chunk-FIAHBV72.js?v=16641ad8:533
+endBatch @ chunk-FIAHBV72.js?v=16641ad8:591
+notify @ chunk-FIAHBV72.js?v=16641ad8:853
+trigger @ chunk-FIAHBV72.js?v=16641ad8:827
+set value @ chunk-FIAHBV72.js?v=16641ad8:1699
+editPicture @ MySpace.vue:652
+(anonymous) @ MySpace.vue:239
+cache.<computed>.cache.<computed> @ chunk-FIAHBV72.js?v=16641ad8:12262
+callWithErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2289
+callWithAsyncErrorHandling @ chunk-FIAHBV72.js?v=16641ad8:2296
+invoker @ chunk-FIAHBV72.js?v=16641ad8:11296
+Show 54 more frames
+Show less

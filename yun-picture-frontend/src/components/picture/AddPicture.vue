@@ -158,13 +158,16 @@
                       class="space-radio"
                     />
                     <span class="option-text">上传到私密空间</span>
-                    <span class="option-hint">（系统会自动创建或使用您的私密空间）</span>
+                    <span class="option-hint" v-if="urlSpaceId">（上传到指定空间）</span>
+                    <span class="option-hint" v-else-if="userSpaceId">（使用您的私密空间）</span>
+                    <span class="option-hint" v-else style="color: #ef4444;">（需要先创建空间）</span>
                   </label>
-                  <label class="space-option">
+                  <label class="space-option" :class="{ disabled: urlSpaceId }">
                     <input 
                       type="radio" 
                       v-model="uploadToPrivate" 
                       :value="false"
+                      :disabled="!!urlSpaceId"
                       class="space-radio"
                     />
                     <span class="option-text">上传到公共空间</span>
@@ -265,6 +268,7 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
   // 空间选择相关
   const uploadToPrivate = ref(true) // 默认选择私密空间
   const userSpaceId = ref<number | null>(null)
+  const urlSpaceId = ref<string | null>(null) // 从URL参数传递的空间ID
   
   // 用户登录状态
   const loginUserStore = useLoginUserStore()
@@ -467,6 +471,14 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
       return
     }
     
+    // 检查私密空间上传时的空间ID
+    const targetSpaceId = urlSpaceId.value || userSpaceId.value
+    console.log('上传时使用的空间ID:', { urlSpaceId: urlSpaceId.value, userSpaceId: userSpaceId.value, targetSpaceId })
+    if (uploadToPrivate.value && !targetSpaceId) {
+      showMessage('您还没有私密空间，请先创建空间后再上传', 'error')
+      return
+    }
+    
     // URL 上传分支
     if (isUrlMode.value) {
       if (!isValidUrl.value) {
@@ -482,7 +494,7 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
           category: formData.category || undefined,
           id: editingId.value || undefined,
           isPublic: !uploadToPrivate.value, // 私密空间为false，公共空间为true
-          spaceId: uploadToPrivate.value && userSpaceId.value ? userSpaceId.value : undefined
+          spaceId: uploadToPrivate.value ? String(targetSpaceId) : undefined
         } as any
         
         // 同时将业务参数放在body中，确保兼容性
@@ -491,7 +503,7 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
           picName: formData.name,
           tags: formData.tags.length > 0 ? formData.tags : undefined,
           isPublic: !uploadToPrivate.value, // 私密空间为false，公共空间为true
-          spaceId: uploadToPrivate.value && userSpaceId.value ? userSpaceId.value : undefined
+          spaceId: uploadToPrivate.value ? String(targetSpaceId) : undefined
         } as any
         
         // 添加调试日志
@@ -543,7 +555,7 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
       const body = {
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         isPublic: !uploadToPrivate.value, // 私密空间为false，公共空间为true
-        spaceId: uploadToPrivate.value && userSpaceId.value ? userSpaceId.value : undefined
+        spaceId: uploadToPrivate.value ? String(targetSpaceId) : undefined
       }
       
       // 添加调试日志
@@ -556,11 +568,11 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
       )
       clearInterval(progressInterval)
       uploadProgress.value = 100
-      if (response.data?.code === 0) {
+      if ((response.data as any)?.code === 0) {
         showMessage('图片上传成功！', 'success')
         resetForm()
       } else {
-        showMessage(response.data?.message || '上传失败', 'error')
+        showMessage((response.data as any)?.message || '上传失败', 'error')
       }
     } catch (error) {
       console.error('上传错误:', error)
@@ -605,6 +617,13 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
       if (q.url && /^(https?:)\/\//i.test(String(q.url))) {
         isUrlMode.value = true
         urlInput.value = String(q.url)
+      }
+      // 读取URL参数中的空间ID
+      if (q.spaceId) {
+        urlSpaceId.value = String(q.spaceId) // 保持为字符串，避免精度丢失
+        // 如果有URL空间ID，强制选择私密空间
+        uploadToPrivate.value = true
+        console.log('从URL参数读取到空间ID:', urlSpaceId.value)
       }
     }
   })
@@ -992,6 +1011,15 @@ import { useLoginUserStore } from '../../stores/useLoginUserStore'
   
   .space-option:hover {
     background: rgba(102, 126, 234, 0.1);
+  }
+  
+  .space-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .space-option.disabled:hover {
+    background: transparent;
   }
   
   .space-radio {

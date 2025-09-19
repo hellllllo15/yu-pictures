@@ -9,8 +9,7 @@ export default defineConfig(({ command }) => ({
   server: {
     proxy: {
       '/api': {
-      //  target: 'http://8.137.113.126:8123',
-      target: 'http://localhost:8123',
+        target: 'http://8.137.113.126:8123',
         changeOrigin: true,
       },
     },

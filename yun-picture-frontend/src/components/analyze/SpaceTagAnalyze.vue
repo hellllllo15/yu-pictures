@@ -77,7 +77,7 @@ const options = computed(() => {
   // 处理数据，确保count是数值类型
   const tagData = dataList.value.map((item) => ({
     name: item.tag || '未命名标签',
-    value: parseInt(item.count as string) || 0, // 将字符串转换为数值
+    value: typeof item.count === 'string' ? parseInt(item.count) || 0 : (item.count || 0), // 安全转换数值
   }))
 
   // 调试信息
@@ -162,3 +162,9 @@ const options = computed(() => {
   padding: 20px;
 }
 </style>
+
+<script lang="ts">
+export default {
+  name: 'SpaceTagAnalyze'
+}
+</script>

@@ -1,130 +1,68 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>请求测试 - 测试1</title>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, PingFang SC, Helvetica Neue, Arial, Noto Sans, "苹果丽黑", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; margin: 0; padding: 24px; background: #0f172a; color: #e5e7eb; }
-    h1 { margin: 0 0 16px; font-size: 20px; }
-    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .row > * { flex: 1 1 300px; }
-    label { font-size: 12px; color: #a3a3a3; display: block; margin-bottom: 6px; }
-    input, textarea { width: 100%; color: #e5e7eb; background: rgba(2,6,23,0.6); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 12px; font-size: 13px; resize: vertical; }
-    textarea { min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    button { appearance: none; border: none; background: linear-gradient(135deg,#6366f1,#22c55e); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; }
-    button.secondary { background: linear-gradient(135deg,#0ea5e9,#6366f1); }
-    .result { white-space: pre-wrap; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; padding: 12px; background: rgba(2,6,23,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; max-height: 420px; overflow: auto; }
-    .hint { color: #93c5fd; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <h1>请求测试（测试1.html）</h1>
-
-  <div class="card">
-    <div class="row">
-      <div>
-        <label>预置请求：百度图像上传（可能受 CORS、鉴权限制，仅作演示）</label>
-        <button id="btnRunPreset">发起预置请求</button>
-      </div>
-      <div>
-        <label>自定义请求</label>
-        <button id="btnRunCustom" class="secondary">发起自定义请求</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="row">
-      <div>
-        <label for="url">URL</label>
-        <input id="url" value="https://graph.baidu.com/upload?uptime=1756110644780" />
-      </div>
-      <div>
-        <label for="method">Method</label>
-        <input id="method" value="POST" />
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label for="headers">Headers（JSON）</label>
-        <textarea id="headers">{
-  "accept": "*/*",
-  "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryUYlMf9DqNIy8jumP"
-}</textarea>
-        <div class="hint">提示：跨域环境下，许多第三方接口会被浏览器 CORS 限制；如需调试请使用同源接口或在后端配置代理。</div>
-      </div>
-      <div>
-        <label for="body">Body（原始字符串）</label>
-        <textarea id="body">------WebKitFormBoundaryUYlMf9DqNIy8jumP
-Content-Disposition: form-data; name="image"
-
-https%3A%2F%2Fjoy-yyds-1369159021.cos.ap-chengdu.myqcloud.com%2F%2Fspace%2F1959549088846360577%2F2025-08-24_ySUJ0U4UQg0ilp7Q.png
-------WebKitFormBoundaryUYlMf9DqNIy8jumP
-Content-Disposition: form-data; name="tn"
-
-pc
-------WebKitFormBoundaryUYlMf9DqNIy8jumP
-Content-Disposition: form-data; name="from"
-
-pc
-------WebKitFormBoundaryUYlMf9DqNIy8jumP
-Content-Disposition: form-data; name="image_source"
-
-PC_UPLOAD_URL
-------WebKitFormBoundaryUYlMf9DqNIy8jumP
-Content-Disposition: form-data; name="sdkParams"
-
-{"data":"8f7588d07e048cb185895de2ac09bfbe055aff1048e6c9402b96d986ae625dde0784d0d19ade10a0e3b516c7fda093a7f467d9c96549e0de5482b4fff347bd31987656ac67a840e03d8e975fed424a6e","key_id":"23","sign":"b8e460b3"}
-------WebKitFormBoundaryUYlMf9DqNIy8jumP--
-</textarea>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <label>响应 / 错误</label>
-    <div id="result" class="result">（等待发起请求...）</div>
-  </div>
-
-  <script>
-    const $ = (id) => document.getElementById(id)
-    const show = (msg) => { $('result').textContent = msg }
-
-    async function runRequest({ url, method, headers, body }) {
-      show('请求中...')
-      try {
-        const res = await fetch(url, { method, headers, body })
-        const text = await res.text().catch(() => '')
-        show(`status: ${res.status} ${res.statusText}\n\n` + text)
-      } catch (err) {
-        show(`请求失败：${err?.message || err}` + '\n\n可能原因：\n- 第三方接口跨域（CORS）被浏览器拦截\n- Header/Body 不被目标服务接受\n- 网络不可达\n\n建议：\n- 使用本项目后端同源接口测试\n- 或在后端配置反向代理绕过 CORS\n')
-      }
-    }
-
-    // 预置请求（即原文件中的请求）
-    $('btnRunPreset').addEventListener('click', () => {
-      const url = 'https://graph.baidu.com/upload?uptime=1756110644780'
-      const headers = {
-        "accept": "*/*",
-        "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryUYlMf9DqNIy8jumP"
-      }
-      const body = `------WebKitFormBoundaryUYlMf9DqNIy8jumP\r\nContent-Disposition: form-data; name="image"\r\n\r\nhttps%3A%2F%2Fjoy-yyds-1369159021.cos.ap-chengdu.myqcloud.com%2F%2Fspace%2F1959549088846360577%2F2025-08-24_ySUJ0U4UQg0ilp7Q.png\r\n------WebKitFormBoundaryUYlMf9DqNIy8jumP\r\nContent-Disposition: form-data; name="tn"\r\n\r\npc\r\n------WebKitFormBoundaryUYlMf9DqNIy8jumP\r\nContent-Disposition: form-data; name="from"\r\n\r\npc\r\n------WebKitFormBoundaryUYlMf9DqNIy8jumP\r\nContent-Disposition: form-data; name="image_source"\r\n\r\nPC_UPLOAD_URL\r\n------WebKitFormBoundaryUYlMf9DqNIy8jumP\r\nContent-Disposition: form-data; name="sdkParams"\r\n\r\n{"data":"8f7588d07e048cb185895de2ac09bfbe055aff1048e6c9402b96d986ae625dde0784d0d19ade10a0e3b516c7fda093a7f467d9c96549e0de5482b4fff347bd31987656ac67a840e03d8e975fed424a6e","key_id":"23","sign":"b8e460b3"}\r\n------WebKitFormBoundaryUYlMf9DqNIy8jumP--\r\n`
-      runRequest({ url, method: 'POST', headers, body })
-    })
-
-    // 自定义请求
-    $('btnRunCustom').addEventListener('click', () => {
-      let url = $('url').value.trim()
-      let method = $('method').value.trim().toUpperCase() || 'GET'
-      let headers = {}
-      try { headers = JSON.parse($('headers').value || '{}') } catch (e) {
-        alert('Headers 必须是合法 JSON'); return
-      }
-      const body = $('body').value
-      runRequest({ url, method, headers, body })
-    })
-  </script>
-</body>
-</html>
+{
+  "code": 0,
+  "data": {
+      "records": [
+          {
+              "id": "1962201545030270977",
+              "url": "https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com//space/1959549088846360577/2025-09-01_fIFchR5oKCOqaKFt.png",
+              "name": "测试",
+              "spaceId": "1959549088846360577",
+              "introduction": "测试",
+              "reviewStatus": 1,
+              "tags": [],
+              "category": "模板",
+              "picSize": "133706",
+              "picWidth": 297,
+              "picHeight": 452,
+              "picScale": 0.66,
+              "picFormat": "PNG",
+              "userId": "1955962986214469634",
+              "createTime": "2025-08-31T17:11:18.000+00:00",
+              "editTime": "2025-08-31T17:11:19.000+00:00",
+              "updateTime": "2025-08-31T17:11:18.000+00:00",
+              "user": {
+                  "id": "1955962986214469634",
+                  "userAccount": "root",
+                  "userName": "无名",
+                  "userAvatar": "https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com/%E6%89%B9%E6%B3%A8%202025-04-26%20171608.png",
+                  "userProfile": null,
+                  "userRole": "admin",
+                  "createTime": "2025-08-14T12:01:30.000+00:00"
+              }
+          },
+          {
+              "id": "1962201723762147329",
+              "url": "https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com//public/1955962986214469634/2025-09-01_HAITwItLczNNWCY4.png",
+              "name": "搜索",
+              "spaceId": null,
+              "introduction": "",
+              "reviewStatus": 1,
+              "tags": [],
+              "category": null,
+              "picSize": "133706",
+              "picWidth": 297,
+              "picHeight": 452,
+              "picScale": 0.66,
+              "picFormat": "PNG",
+              "userId": "1955962986214469634",
+              "createTime": "2025-08-31T17:12:01.000+00:00",
+              "editTime": "2025-08-31T17:12:02.000+00:00",
+              "updateTime": "2025-08-31T17:12:01.000+00:00",
+              "user": {
+                  "id": "1955962986214469634",
+                  "userAccount": "root",
+                  "userName": "无名",
+                  "userAvatar": "https://joy-yyds-1369159021.cos.ap-chengdu.myqcloud.com/%E6%89%B9%E6%B3%A8%202025-04-26%20171608.png",
+                  "userProfile": null,
+                  "userRole": "admin",
+                  "createTime": "2025-08-14T12:01:30.000+00:00"
+              }
+          }
+      ],
+      "total": "62",
+      "size": "12",
+      "current": "6",
+      "pages": "6"
+  },
+  "message": "ok"
+}

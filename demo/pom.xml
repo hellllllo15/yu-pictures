@@ -130,12 +130,36 @@
 		</dependency>
 
 
-<!--		&lt;!&ndash; 分库分表 &ndash;&gt;-->
+
+		<!-- websocket -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jetbrains</groupId>
+			<artifactId>annotations</artifactId>
+			<version>13.0</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<!--		&lt;!&ndash; 分库分表 &ndash;&gt;-->
 <!--		<dependency>-->
 <!--			<groupId>org.apache.shardingsphere</groupId>-->
 <!--			<artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>-->
 <!--			<version>5.2.0</version>-->
 <!--		</dependency>-->
+
+
+
+		<!-- 高性能无锁队列 -->
+		<dependency>
+			<groupId>com.lmax</groupId>
+			<artifactId>disruptor</artifactId>
+			<version>3.4.2</version>
+		</dependency>
+
+
 
 	</dependencies>
 

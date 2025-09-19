@@ -779,7 +779,7 @@ const goBackToList = () => {
   justify-content: center;
   z-index: 9999;
   backdrop-filter: blur(10px);
-  padding: 4rem 1rem 1rem 1rem;
+  padding: 6rem 1rem 1rem 1rem;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -882,9 +882,10 @@ const goBackToList = () => {
    max-height: 75vh;
    overflow: auto;
    display: flex;
-   align-items: center;
+   align-items: flex-start;
    justify-content: center;
    background: rgba(0,0,0,0.3);
+   padding: 2rem 1rem 1rem 1rem;
  }
 
 .preview-image-container img {
@@ -894,7 +895,7 @@ const goBackToList = () => {
    height: auto;
    object-fit: contain;
    transition: opacity 0.3s ease;
-   margin: 1rem;
+   margin: 2rem;
  }
 
 .preview-image-container img.preview-loading {

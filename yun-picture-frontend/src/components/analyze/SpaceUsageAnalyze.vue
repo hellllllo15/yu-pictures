@@ -222,3 +222,9 @@ const options = computed(() => {
   padding: 20px;
 }
 </style>
+
+<script lang="ts">
+export default {
+  name: 'SpaceUsageAnalyze'
+}
+</script>

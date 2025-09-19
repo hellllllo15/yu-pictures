@@ -97,7 +97,7 @@ public class pictureController {
     /**
      * 删除图片
      */
-    @PostMapping("/delete")
+    //@PostMapping("/delete")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest , HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
@@ -134,8 +134,8 @@ public class pictureController {
 
 
 
-        // 操作数据库 - 使用自定义方法确保包含spaceId
-        boolean result = pictureService.updatePictureWithSpaceId(picture);
+
+        boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -226,6 +226,7 @@ public class pictureController {
             }
 
             //需要让用户能够查到自己所有的图片，所以要把空间ID的限制去掉
+            //将有无空间ID的查询结果拼接
            // pictureQueryRequest.setSpaceId(null);
         }
 
@@ -235,6 +236,9 @@ public class pictureController {
 // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureQueryWrapper);
+
+
+
 
 
 
@@ -277,7 +281,6 @@ public class pictureController {
      * 用户上传/更新图片/文件上传   前端使用了
      */
     @PostMapping("/add")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> addPicture(   @RequestParam("file") MultipartFile multipartFile,
                                               PictureUpdateRequest pictureUpdateRequest,
                                              HttpServletRequest request) {
@@ -339,8 +342,7 @@ public class pictureController {
         // 操作数据库
         boolean result = pictureService.updateById(picture);
 
-//        // 操作数据库 - 使用自定义方法确保包含spaceId
-//        boolean result = pictureService.updatePictureWithSpaceId(picture);
+//
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -435,8 +437,7 @@ public class pictureController {
         // 操作数据库
         boolean result = pictureService.updateById(picture);
 
-//        // 操作数据库 - 使用自定义方法确保包含spaceId
-//        boolean result = pictureService.updatePictureWithSpaceId(picture);
+//
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -480,7 +481,6 @@ public class pictureController {
      * 批量抓取原图 URL（仅抓取，不入库）
      */
     @GetMapping("/crawl/urls")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<List<String>> crawlOriginalUrls(
             @RequestParam("keyword") String keyword,
             @RequestParam(value = "offset", defaultValue = "0") Integer offset
@@ -491,6 +491,41 @@ public class pictureController {
         List<String> urls = CrawlPictures.crawl(keyword, offset);
         return ResultUtils.success(urls);
     }
+
+
+    /**
+     * 批量抓取原图 URL（仅抓取，添加到数据库）
+     */
+    @GetMapping("/crawl/urls/hahaha")
+    public BaseResponse<List<String>> crawlOriginalUrlsHAHAHA(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset
+    ) {
+        if (offset == null || offset < 0) {
+            offset = 0;
+        }
+        List<String> urls = CrawlPictures.crawl(keyword, offset);
+Picture picture=new Picture();
+        picture.setName("图片");
+        picture.setUserId(11L);
+        picture.setReviewStatus(1);
+        for (String url : urls) {
+picture.setId(null);
+            picture.setUrl(url);
+            pictureService.save(picture);
+
+
+
+        }
+
+        return ResultUtils.success(urls);
+    }
+
+
+
+
+
+
 
 
     /**

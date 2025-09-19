@@ -21,7 +21,7 @@ const route = useRoute()
 const router = useRouter()
 
 // 需要登录的页面路径
-const protectedRoutes = ['/admin/userManage', '/user/profile', '/user/settings', '/picture/upload']
+const protectedRoutes = ['/user/profile', '/user/settings', '/picture/upload']
 
 // 检查登录状态
 const checkLoginStatus = () => {

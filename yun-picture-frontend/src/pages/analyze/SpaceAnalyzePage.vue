@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import SpaceUsageAnalyze from '../../components/analyze/SpaceUsageAnalyze.vue'
 import SpaceCategoryAnalyze from '../../components/analyze/SpaceCategoryAnalyze.vue'
 import SpaceTagAnalyze from '../../components/analyze/SpaceTagAnalyze.vue'
@@ -156,6 +156,19 @@ const handleQuery = () => {
     })
   }
 }
+
+// 页面加载时自动获取数据
+onMounted(() => {
+  // 延迟一点时间确保所有组件都已挂载
+  setTimeout(() => {
+    usageAnalyzeComponent.value?.fetchData()
+    categoryAnalyzeComponent.value?.fetchData()
+    tagAnalyzeComponent.value?.fetchData()
+    sizeAnalyzeComponent.value?.fetchData()
+    userAnalyzeComponent.value?.fetchData()
+    rankAnalyzeComponent.value?.fetchData()
+  }, 100)
+})
 </script>
 
 <style scoped>

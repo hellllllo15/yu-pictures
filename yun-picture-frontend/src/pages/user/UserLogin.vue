@@ -78,10 +78,19 @@ const handleLogin = async () => {
       
       console.log('登录成功:', response.data.data)
       
-      // 跳转到主页
+      // 处理登录成功后的跳转
       try {
-        await router.push('/')
-        console.log('登录成功，跳转完成')
+        // 检查是否有重定向参数
+        const urlParams = new URLSearchParams(window.location.search)
+        const redirectPath = urlParams.get('redirect')
+        
+        let targetPath = '/'
+        if (redirectPath && redirectPath !== '/user/login' && redirectPath !== '/user/UserAuth') {
+          targetPath = decodeURIComponent(redirectPath)
+        }
+        
+        await router.push(targetPath)
+        console.log('登录成功，跳转完成到:', targetPath)
       } catch (routerError) {
         console.error('路由跳转失败:', routerError)
         // 如果跳转失败，尝试重新跳转
@@ -123,7 +132,7 @@ const goBack = async () => {
         window.location.href = '/user/UserAuth'
       }
     }, 100)
-      }
+  }
 }
 </script>
 

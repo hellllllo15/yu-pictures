@@ -3,9 +3,7 @@ import axios from 'axios'
 
 // 创建 Axios 实例
 const myAxios = axios.create({
-  baseURL: '',
-   // baseURL: 'http://8.137.113.126:8123',
-  //baseURL: 'http://localhost:8123',
+  baseURL: 'http://localhost:8123',
   timeout: 60000,
   withCredentials: true,
 })
@@ -31,10 +29,23 @@ myAxios.interceptors.response.use(
       // 不是获取用户信息的请求，并且用户目前不是已经在用户登录页面，则跳转到登录页面
       if (
         !response.request.responseURL.includes('user/get/login') &&
-        !window.location.pathname.includes('/user/login')
+        !window.location.pathname.includes('/user/login') &&
+        !window.location.pathname.includes('/user/UserAuth')
       ) {
-       // message.warning('请先登录')
-        window.location.href = `/user/login?redirect=${window.location.href}`
+        // 清除本地登录状态
+        localStorage.removeItem('isLoggedIn')
+        localStorage.removeItem('userInfo')
+        
+        // message.warning('请先登录')
+        // 修复跨域场景下的重定向问题
+        const currentPath = window.location.pathname
+        if (currentPath === '/' || currentPath === '') {
+          // 如果在首页，跳转到用户认证页面
+          window.location.href = '/user/UserAuth'
+        } else {
+          // 其他页面跳转到登录页面，并携带重定向参数
+          window.location.href = `/user/login?redirect=${encodeURIComponent(window.location.pathname)}`
+        }
       }
     }
     return response

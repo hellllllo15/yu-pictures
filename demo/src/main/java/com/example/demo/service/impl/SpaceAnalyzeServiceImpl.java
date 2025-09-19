@@ -25,6 +25,7 @@ import javax.annotation.Resource;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -195,7 +196,8 @@ private PictureService pictureService;
         queryWrapper.select("picSize");
         List<Long> picSizes = pictureService.getBaseMapper().selectObjs(queryWrapper)
                 .stream()
-                .map(size -> ((Number) size).longValue())
+                .filter(Objects::nonNull) // 过滤掉 null 值
+                .map(size -> ((Number) size).longValue()) // 转换为 long 类型
                 .collect(Collectors.toList());
 
         // 定义分段范围，注意使用有序 Map
@@ -213,7 +215,7 @@ private PictureService pictureService;
 
 
 
-/// 基于图片的创建时间维度统计用户的上传行为，并按照时间升序排序
+    /// 基于图片的创建时间维度统计用户的上传行为，并按照时间升序排序
     @Override
     public List<SpaceUserAnalyzeResponse> getSpaceUserAnalyze(SpaceUserAnalyzeRequest spaceUserAnalyzeRequest, User loginUser) {
         ThrowUtils.throwIf(spaceUserAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);

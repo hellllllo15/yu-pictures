@@ -15,6 +15,7 @@ import SpaceManage from '../pages/admin/SpaceManage.vue'
 import UserManage from '../pages/admin/UserManage.vue'
 import SpaceAnalyzePage from '../pages/analyze/SpaceAnalyzePage.vue'
 import BackGround from '../pages/background/BackGround.vue'
+import WebSocketTest from '../pages/test/WebSocketTest.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,16 +44,19 @@ const router = createRouter({
       path: '/admin/userManage',
       name: '用户管理',
       component: UserManage,
+      meta: { requiresAdmin: true }
     },
     {
       path: '/admin/pictureManage',
       name: '图片管理',
       component: PictureManage,
+      meta: { requiresAdmin: true }
     },
     {
       path: '/admin/spaceManage',
       name: '空间管理',
       component: SpaceManage,
+      meta: { requiresAdmin: true }
     },
     {
       path: '/space/add',
@@ -98,8 +102,43 @@ const router = createRouter({
       path: '/analyze/space',
       name: '空间分析',
       component: SpaceAnalyzePage,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/test/websocket',
+      name: 'WebSocket测试',
+      component: WebSocketTest,
     },
   ],
+})
+
+// 路由守卫：检查管理员权限
+router.beforeEach((to, from, next) => {
+  // 检查路由是否需要管理员权限
+  if (to.meta.requiresAdmin) {
+    // 获取用户信息
+    const userInfo = localStorage.getItem('userInfo')
+    if (userInfo) {
+      try {
+        const user = JSON.parse(userInfo)
+        // 检查用户角色是否为admin
+        if (user.userRole === 'admin') {
+          next() // 允许访问
+        } else {
+          // 非管理员用户重定向到首页
+          next('/')
+        }
+      } catch (error) {
+        console.error('解析用户信息失败:', error)
+        next('/')
+      }
+    } else {
+      // 未登录用户重定向到认证页面
+      next('/user/UserAuth')
+    }
+  } else {
+    next() // 不需要管理员权限的路由直接通过
+  }
 })
 
 export default router

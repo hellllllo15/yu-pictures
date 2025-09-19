@@ -260,8 +260,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
 
-        queryWrapper.eq(ObjUtil.isNotEmpty(spaceId), "spaceId", spaceId);
-        queryWrapper.isNull(nullSpaceId, "spaceId");
+        // 如果存在spaceId，则只查询spaceId有值的数据
+        if (ObjUtil.isNotEmpty(spaceId)) {
+            queryWrapper.eq("spaceId", spaceId);
+        } else {
+            // 如果不存在spaceId，则根据nullSpaceId参数决定是否查询空值
+            queryWrapper.isNull(nullSpaceId, "spaceId");
+        }
 
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
@@ -383,8 +388,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         BeanUtils.copyProperties(pictureReviewRequest, updatePicture);
         updatePicture.setReviewerId(loginUser.getId());
         updatePicture.setReviewTime(new Date());
-        // 使用自定义方法确保包含spaceId
-        boolean result = this.updatePictureWithSpaceId(updatePicture);
+
+        boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
     }
 
@@ -581,8 +586,8 @@ public void checkPictureAuth(User loginUser, Picture picture) {
         checkPictureAuth(loginUser, oldPicture);
         // 补充审核参数
         this.fillReviewParams(picture, loginUser);
-        // 操作数据库 - 使用自定义方法确保包含spaceId
-        boolean result = this.updatePictureWithSpaceId(picture);
+
+        boolean result = this.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
     }
 
