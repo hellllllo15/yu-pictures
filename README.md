@@ -2,6 +2,17 @@
 
 该项目是学习阶段，未扩展
 
+运行项目还需要直接配置阿里云对象存储：
+cos:
+  client:
+    host: 
+    secretId: 
+    secretKey: 
+    region:  ap-chengdu
+    bucket:  
+
+
+
 为兼容云服务，已将分库分表的启动注释，可全局搜索“分库分表”
 com/example/demo/manager/sharding/DynamicShardingManager
 com/example/demo/manager/sharding/PictureShardingAlgorithm
